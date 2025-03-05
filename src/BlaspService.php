@@ -100,18 +100,13 @@ class BlaspService extends BlaspExpressionService
      */
     public function check(string $string): self
     {
-        if (empty($string)) {
-
-            throw new Exception('No string to check');
+        if (trim($string) === '') {  
+            throw new InvalidArgumentException('The input string cannot be empty.');
         }
 
-        $this->sourceString = $string;
+        $this->sourceString = $this->cleanString = $string;
 
-        $this->cleanString = $string;
-
-        $this->handle();
-
-        return $this;
+        return $this->handle();
     }
 
     /**
