@@ -85,6 +85,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cache Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Specify the cache driver to use for storing profanity expressions.
+    | If not specified, the default Laravel cache driver will be used.
+    |
+    */
+    'cache_driver' => env('BLASP_CACHE_DRIVER', null),
+
+    /*
+    |--------------------------------------------------------------------------
     | False Positives
     |--------------------------------------------------------------------------
     |
@@ -972,7 +983,6 @@ return [
         'nutsack',
         'ontherag',
         'orafis',
-        'orgasim',
         'orgasim',
         'orgasm',
         'orgasum',
