@@ -108,6 +108,12 @@ class BlaspService extends BlaspExpressionService
         $this->sourceString = $string;
 
         $this->cleanString = $string;
+        
+        $this->hasProfanity = false;
+        
+        $this->uniqueProfanitiesFound = [];
+        
+        $this->profanitiesCount = 0;
 
         $this->handle();
 
