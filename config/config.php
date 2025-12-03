@@ -23,6 +23,21 @@ return [
     */
     'mask_character' => '*',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Driver
+    |--------------------------------------------------------------------------
+    |
+    | Specify the cache driver to use for storing profanity expressions.
+    | If not specified, the default Laravel cache driver will be used.
+    | This is useful for environments like Laravel Vapor where DynamoDB
+    | has size limits that can be exceeded by cached profanity expressions.
+    |
+    | Supported: Any cache driver configured in your Laravel application
+    | Example: "redis", "file", "array", "database", etc.
+    |
+    */
+    'cache_driver' => env('BLASP_CACHE_DRIVER'),
 
     /*
     |--------------------------------------------------------------------------

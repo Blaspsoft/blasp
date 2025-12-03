@@ -266,6 +266,26 @@ php artisan blasp:clear
 
 This command will clear all cached Blasp expressions and configurations.
 
+### Cache Driver Configuration
+
+By default, Blasp uses Laravel's default cache driver. You can specify a different cache driver for Blasp by setting the `cache_driver` option in your configuration:
+
+```php
+// config/blasp.php
+return [
+    'cache_driver' => env('BLASP_CACHE_DRIVER'),
+    // ...
+];
+```
+
+Or set it via environment variable:
+
+```env
+BLASP_CACHE_DRIVER=redis
+```
+
+This is particularly useful in environments like **Laravel Vapor** where the default cache driver (DynamoDB) has size limits that can be exceeded when caching large profanity expression sets. By configuring a different cache driver (such as Redis), you can avoid these limitations.
+
 ## ⚡ Performance
 
 Blasp v3.0 includes significant performance optimizations:
