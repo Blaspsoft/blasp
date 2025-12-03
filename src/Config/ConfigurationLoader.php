@@ -22,6 +22,18 @@ class ConfigurationLoader
 {
     private const CACHE_TTL = 86400; // 24 hours
 
+    /**
+     * Get the cache store instance with the configured driver.
+     *
+     * @return \Illuminate\Contracts\Cache\Repository
+     */
+    private static function getCache(): \Illuminate\Contracts\Cache\Repository
+    {
+        $driver = config('blasp.cache_driver');
+
+        return $driver !== null ? Cache::store($driver) : Cache::store();
+    }
+
     public function __construct(
         private ?ExpressionGeneratorInterface $expressionGenerator = null
     ) {
@@ -249,7 +261,7 @@ class ConfigurationLoader
     private function loadFromCacheOrGenerate(DetectionConfigInterface $config): DetectionConfigInterface
     {
         $cacheKey = $config->getCacheKey();
-        $cached = Cache::get($cacheKey);
+        $cached = self::getCache()->get($cacheKey);
         
         if ($cached) {
             return $this->loadFromCache($cached);
@@ -312,12 +324,12 @@ class ConfigurationLoader
                     'false_positives' => $config->getFalsePositivesForLanguage($language)
                 ];
             }
-            
+
             $configToCache['language_data'] = $languageData;
             $configToCache['default_language'] = $config->getCurrentLanguage();
         }
 
-        Cache::put($cacheKey, $configToCache, self::CACHE_TTL);
+        self::getCache()->put($cacheKey, $configToCache, self::CACHE_TTL);
         $this->trackCacheKey($cacheKey);
     }
 
@@ -329,11 +341,12 @@ class ConfigurationLoader
      */
     private function trackCacheKey(string $cacheKey): void
     {
-        $keys = Cache::get('blasp_cache_keys', []);
-        
+        $cache = self::getCache();
+        $keys = $cache->get('blasp_cache_keys', []);
+
         if (!in_array($cacheKey, $keys)) {
             $keys[] = $cacheKey;
-            Cache::put('blasp_cache_keys', $keys, self::CACHE_TTL);
+            $cache->put('blasp_cache_keys', $keys, self::CACHE_TTL);
         }
     }
 
@@ -344,11 +357,13 @@ class ConfigurationLoader
      */
     public static function clearCache(): void
     {
-        $keys = Cache::get('blasp_cache_keys', []);
+        $cache = self::getCache();
+        $keys = $cache->get('blasp_cache_keys', []);
+
         foreach ($keys as $key) {
-            Cache::forget($key);
+            $cache->forget($key);
         }
-        
-        Cache::forget('blasp_cache_keys');
+
+        $cache->forget('blasp_cache_keys');
     }
 }
