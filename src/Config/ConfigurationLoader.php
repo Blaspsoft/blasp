@@ -31,7 +31,7 @@ class ConfigurationLoader
     {
         $driver = config('blasp.cache_driver');
 
-        return $driver ? Cache::store($driver) : Cache::store();
+        return $driver !== null ? Cache::store($driver) : Cache::store();
     }
 
     public function __construct(
