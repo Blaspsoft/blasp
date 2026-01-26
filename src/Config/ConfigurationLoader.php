@@ -90,8 +90,12 @@ class ConfigurationLoader
                 // match inside already-substituted character classes.
                 foreach ($languageData['substitutions'] as $pattern => $values) {
                     // Only include patterns for single ASCII letters: /a/ through /z/
-                    if (preg_match('#^/[a-z]/$#i', $pattern)) {
-                        $substitutions[$pattern] = $values;
+                    if (preg_match('#^/[a-z]/$#i', $pattern) && is_array($values)) {
+                        // Merge with existing substitutions to preserve base variants
+                        $substitutions[$pattern] = array_values(array_unique(array_merge(
+                            $substitutions[$pattern] ?? [],
+                            $values
+                        )));
                     }
                 }
             }
