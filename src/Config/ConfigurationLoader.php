@@ -79,7 +79,25 @@ class ConfigurationLoader
         }
 
         $separators = config('blasp.separators');
+
+        // Load substitutions - start with main config, then merge language-specific
         $substitutions = config('blasp.substitutions');
+        try {
+            $languageData = $this->loadLanguage($targetLanguage);
+            if (isset($languageData['substitutions']) && is_array($languageData['substitutions'])) {
+                // Only merge substitutions for basic a-z letters to avoid regex conflicts.
+                // Accented character patterns (like /ù/, /é/) can cause issues when they
+                // match inside already-substituted character classes.
+                foreach ($languageData['substitutions'] as $pattern => $values) {
+                    // Only include patterns for single ASCII letters: /a/ through /z/
+                    if (preg_match('#^/[a-z]/$#i', $pattern)) {
+                        $substitutions[$pattern] = $values;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Keep main config substitutions
+        }
 
         $config = new DetectionConfig(
             $profanities,
@@ -107,6 +125,10 @@ class ConfigurationLoader
         }
 
         $separators = config('blasp.separators');
+
+        // For multi-language mode, use main config substitutions which are designed
+        // to work across languages. Language-specific substitutions could cause
+        // regex conflicts when combined.
         $substitutions = config('blasp.substitutions');
 
         $config = new MultiLanguageDetectionConfig(
