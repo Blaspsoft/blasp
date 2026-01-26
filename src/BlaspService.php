@@ -352,10 +352,10 @@ class BlaspService
     }
 
     /**
-     * Check if a match inappropriately spans across word boundaries.
-     * 
-     * @param string $matchedText The text that was matched by the regex
-     * @return bool
+     * Determine whether a matched substring inappropriately spans word boundaries (and should be treated as a cross-word match).
+     *
+     * @param string $matchedText The substring captured by the detector, possibly containing internal whitespace or obfuscation.
+     * @return bool `true` if the match spans word boundaries and should be rejected, `false` otherwise.
      */
     private function isSpanningWordBoundary(string $matchedText): bool
     {
