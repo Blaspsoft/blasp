@@ -149,6 +149,25 @@ This will publish:
 - `config/blasp.php` - Main configuration with default language settings
 - `config/languages/` - Language-specific profanity lists (English, Spanish, German, French)
 
+### Language-Specific Substitutions
+
+Each language file can define its own character substitutions that will be merged with the main config:
+
+```php
+// config/languages/french.php
+return [
+    'profanities' => [...],
+    'false_positives' => [...],
+    'substitutions' => [
+        '/c/' => ['c', 'k', 'ç', 's'],  // French-specific: ç maps to c
+        '/u/' => ['u', 'ù', 'ú', 'û', 'ü', '@', '*'],
+        // ... other letter substitutions
+    ],
+];
+```
+
+Only basic letter patterns (`/a/` through `/z/`) from language files are merged to avoid regex conflicts.
+
 ### Custom Configuration
 
 You can specify custom profanity and false positive lists using the `configure()` method:
