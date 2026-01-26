@@ -290,4 +290,20 @@ class BlaspCheckTest extends TestCase
         $this->assertCount(2, $result->uniqueProfanitiesFound);
         $this->assertSame('This is a ******* **** sentence', $result->cleanString);
     }
+
+    public function test_spaced_profanity_with_substitution()
+    {
+        // Issue #36 - README example should be detected
+        $result = $this->blaspService->check('This is f u c k 1 n g awesome!');
+
+        $this->assertTrue($result->hasProfanity);
+        $this->assertStringContainsString('*', $result->cleanString);
+    }
+
+    public function test_spaced_profanity_without_substitution()
+    {
+        $result = $this->blaspService->check('f u c k i n g');
+
+        $this->assertTrue($result->hasProfanity);
+    }
 }
