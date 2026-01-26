@@ -361,25 +361,38 @@ class BlaspService
     {
         // If the match contains spaces, it might be spanning word boundaries
         if (preg_match('/\s+/', $matchedText)) {
-            // Split by spaces to check the word structure
             $parts = preg_split('/\s+/', $matchedText);
-            
-            // If we have multiple parts and the last part is just a single character,
-            // it's likely the beginning of the next word
+
             if (count($parts) > 1) {
-                $lastPart = end($parts);
-                if (strlen($lastPart) === 1 && preg_match('/[a-z]/i', $lastPart)) {
-                    return true;  // Last part is single char - likely from next word
+                // Count how many parts are single characters
+                $singleCharCount = 0;
+                foreach ($parts as $part) {
+                    if (strlen($part) === 1 && preg_match('/[a-z]/i', $part)) {
+                        $singleCharCount++;
+                    }
                 }
-                
-                // Also check if first part is single char (less common but possible)
+
+                // If ALL parts are single characters, this is intentional obfuscation
+                // (e.g., "f u c k i n g") - allow it
+                if ($singleCharCount === count($parts)) {
+                    return false;
+                }
+
+                // If SOME parts are single characters at edges, this is likely
+                // a cross-word match (e.g., "t êt" from "pourrait être") - reject it
                 $firstPart = $parts[0];
+                $lastPart = end($parts);
+
+                if (strlen($lastPart) === 1 && preg_match('/[a-z]/i', $lastPart)) {
+                    return true;
+                }
+
                 if (strlen($firstPart) === 1 && preg_match('/[a-z]/i', $firstPart)) {
-                    return true;  // First part is single char - likely from previous word
+                    return true;
                 }
             }
         }
-        
+
         return false;
     }
 
