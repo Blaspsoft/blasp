@@ -65,7 +65,7 @@ class ProfanityExpressionGeneratorTest extends TestCase
         
         $this->assertIsString($result);
         $this->assertStringStartsWith('/', $result);
-        $this->assertStringEndsWith('/i', $result);
+        $this->assertStringEndsWith('/iu', $result);
     }
 
     public function test_generate_expressions_full_flow()
@@ -92,7 +92,7 @@ class ProfanityExpressionGeneratorTest extends TestCase
         foreach ($result as $profanity => $expression) {
             $this->assertIsString($expression);
             $this->assertStringStartsWith('/', $expression);
-            $this->assertStringEndsWith('/i', $expression);
+            $this->assertStringEndsWith('/iu', $expression);
             
             // Verify it's a valid regex by testing it doesn't throw error
             $testResult = @preg_match($expression, $profanity);
