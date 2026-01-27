@@ -276,6 +276,43 @@ class ProfanityExpressionGeneratorTest extends TestCase
         $this->assertEquals(1, preg_match($testPattern, 't-.e.s-t'));
     }
 
+    public function test_circular_substitutions_produce_valid_regex()
+    {
+        $substitutions = [
+            '/c/' => ['c', 'k', 'ç'],
+            '/k/' => ['k', 'c', 'q'],
+        ];
+        $subExpressions = $this->generator->generateSubstitutionExpressions($substitutions);
+        $separatorExpr = $this->generator->generateSeparatorExpression([]);
+        $regex = $this->generator->generateProfanityExpression('cock', $subExpressions, $separatorExpr);
+
+        // Regex should be valid (no nested brackets)
+        $this->assertNotFalse(@preg_match($regex, ''));
+
+        // Should match the original word
+        $this->assertMatchesRegularExpression($regex, 'cock');
+
+        // Should match with substitutions
+        $this->assertMatchesRegularExpression($regex, 'kokk');
+        $this->assertMatchesRegularExpression($regex, 'çoçk');
+    }
+
+    public function test_multi_char_substitutions()
+    {
+        $substitutions = [
+            '/p/' => ['p'],
+            '/h/' => ['h'],
+            '/ph/' => ['ph', 'f'],
+        ];
+        $subExpressions = $this->generator->generateSubstitutionExpressions($substitutions);
+        $separatorExpr = $this->generator->generateSeparatorExpression([]);
+        $regex = $this->generator->generateProfanityExpression('phone', $subExpressions, $separatorExpr);
+
+        // 'ph' should be consumed as one unit, matching 'f'
+        $this->assertMatchesRegularExpression($regex, 'phone');
+        $this->assertMatchesRegularExpression($regex, 'fone');
+    }
+
     public function test_basic_profanity_matching()
     {
         $profanities = ['damn', 'hell'];

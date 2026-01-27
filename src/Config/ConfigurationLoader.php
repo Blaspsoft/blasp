@@ -79,7 +79,23 @@ class ConfigurationLoader
         }
 
         $separators = config('blasp.separators');
+
         $substitutions = config('blasp.substitutions');
+        try {
+            $languageData = $this->loadLanguage($targetLanguage);
+            if (isset($languageData['substitutions']) && is_array($languageData['substitutions'])) {
+                foreach ($languageData['substitutions'] as $pattern => $values) {
+                    if (is_array($values)) {
+                        $substitutions[$pattern] = array_values(array_unique(array_merge(
+                            $substitutions[$pattern] ?? [],
+                            $values
+                        )));
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            // Keep main config substitutions
+        }
 
         $config = new DetectionConfig(
             $profanities,
@@ -107,7 +123,28 @@ class ConfigurationLoader
         }
 
         $separators = config('blasp.separators');
+
         $substitutions = config('blasp.substitutions');
+        foreach ($languageData as $langConfig) {
+            if (isset($langConfig['substitutions']) && is_array($langConfig['substitutions'])) {
+                foreach ($langConfig['substitutions'] as $pattern => $values) {
+                    if (is_array($values)) {
+                        // Only merge accent/diacritic substitution keys (e.g., /ç/, /ß/, /ñ/).
+                        // Skip base ASCII letter keys (e.g., /z/, /c/, /j/) and multi-char
+                        // keys (e.g., /ck/, /sch/) as these are language-specific phonetic
+                        // patterns that cause false positives when applied across all languages.
+                        $plainKey = trim($pattern, '/');
+                        if (mb_strlen($plainKey, 'UTF-8') > 1 || preg_match('/^[a-zA-Z]$/', $plainKey)) {
+                            continue;
+                        }
+                        $substitutions[$pattern] = array_values(array_unique(array_merge(
+                            $substitutions[$pattern] ?? [],
+                            $values
+                        )));
+                    }
+                }
+            }
+        }
 
         $config = new MultiLanguageDetectionConfig(
             $languageData,

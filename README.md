@@ -149,6 +149,22 @@ This will publish:
 - `config/blasp.php` - Main configuration with default language settings
 - `config/languages/` - Language-specific profanity lists (English, Spanish, German, French)
 
+### Character Substitutions
+
+Character substitutions (like `@` for `a`, `0` for `o`) are defined in the main `config/blasp.php` file and apply to all languages. The main config includes comprehensive substitutions for accented characters across all supported languages:
+
+```php
+// config/blasp.php
+'substitutions' => [
+    '/a/' => ['a', '4', '@', 'á', 'à', 'â', 'ä', ...],
+    '/c/' => ['c', 'Ç', 'ç', '¢', ...],
+    '/e/' => ['e', '3', '€', 'é', 'è', 'ê', ...],
+    // ... all 26 letters with their variants
+],
+```
+
+To customize substitutions, modify the main `config/blasp.php` file after publishing.
+
 ### Custom Configuration
 
 You can specify custom profanity and false positive lists using the `configure()` method:

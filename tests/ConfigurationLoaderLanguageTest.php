@@ -227,4 +227,27 @@ class ConfigurationLoaderLanguageTest extends TestCase
         $normalizer = $config->getStringNormalizer();
         $this->assertInstanceOf(\Blaspsoft\Blasp\Normalizers\FrenchStringNormalizer::class, $normalizer);
     }
+
+    /**
+     * Test that language-specific substitutions are merged with main config.
+     */
+    public function test_language_substitutions_are_merged()
+    {
+        $config = $this->loader->load(null, null, 'french');
+        $substitutions = $config->getSubstitutions();
+
+        // Main config base patterns should be present
+        $this->assertArrayHasKey('/a/', $substitutions);
+        $this->assertArrayHasKey('/z/', $substitutions);
+
+        // French-specific patterns should be merged
+        $this->assertArrayHasKey('/c/', $substitutions);
+        $this->assertContains('k', $substitutions['/c/']);  // French adds k→c mapping
+        $this->assertContains('ç', $substitutions['/c/']);  // Both main + French have ç
+
+        // Verify substitution-dependent detection works
+        $service = new \Blaspsoft\Blasp\BlaspService();
+        $result = $service->language('french')->check('connard');
+        $this->assertTrue($result->hasProfanity);
+    }
 }
