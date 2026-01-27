@@ -229,29 +229,25 @@ class ConfigurationLoaderLanguageTest extends TestCase
     }
 
     /**
-     * Test that substitutions are loaded from main config for all languages.
-     * Language-specific substitutions are not merged due to circular reference issues.
+     * Test that language-specific substitutions are merged with main config.
      */
-    public function test_substitutions_loaded_from_main_config()
+    public function test_language_substitutions_are_merged()
     {
-        // Load French config
         $config = $this->loader->load(null, null, 'french');
-
         $substitutions = $config->getSubstitutions();
 
-        // Should have base substitutions from main config (all 26 letters)
+        // Main config base patterns should be present
         $this->assertArrayHasKey('/a/', $substitutions);
-        $this->assertArrayHasKey('/b/', $substitutions);
-        $this->assertArrayHasKey('/c/', $substitutions);
         $this->assertArrayHasKey('/z/', $substitutions);
 
-        // Main config /c/ should include ç for French text detection
-        $this->assertContains('ç', $substitutions['/c/']);
+        // French-specific patterns should be merged
+        $this->assertArrayHasKey('/c/', $substitutions);
+        $this->assertContains('k', $substitutions['/c/']);  // French adds k→c mapping
+        $this->assertContains('ç', $substitutions['/c/']);  // Both main + French have ç
 
-        // Verify French profanity detection works
+        // Verify substitution-dependent detection works
         $service = new \Blaspsoft\Blasp\BlaspService();
-        $result = $service->language('french')->check('merde');
-
-        $this->assertTrue($result->hasProfanity, 'French profanity should be detected');
+        $result = $service->language('french')->check('connard');
+        $this->assertTrue($result->hasProfanity);
     }
 }

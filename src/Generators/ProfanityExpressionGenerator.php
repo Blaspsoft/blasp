@@ -81,7 +81,28 @@ class ProfanityExpressionGenerator implements ExpressionGeneratorInterface
         $characterExpressions = [];
 
         foreach ($substitutions as $character => $substitutionOptions) {
-            $characterExpressions[$character] = $this->generateEscapedExpression($substitutionOptions, [], '+') . self::SEPARATOR_PLACEHOLDER;
+            $hasMultiChar = false;
+            foreach ($substitutionOptions as $option) {
+                // Check if option is a genuine multi-char string (not a pre-escaped single char like \$)
+                if (mb_strlen($option, 'UTF-8') > 1 && !preg_match('/^\\\\.$/u', $option)) {
+                    $hasMultiChar = true;
+                    break;
+                }
+            }
+
+            if ($hasMultiChar) {
+                // Use alternation for multi-char options: (?:sch|sh|ch|s)+
+                $escaped = array_map(function ($opt) {
+                    // Options that are already regex-escaped (like \$) should be kept as-is
+                    if (preg_match('/^\\\\.$/u', $opt)) {
+                        return $opt;
+                    }
+                    return preg_quote($opt, '/');
+                }, $substitutionOptions);
+                $characterExpressions[$character] = '(?:' . implode('|', $escaped) . ')+' . self::SEPARATOR_PLACEHOLDER;
+            } else {
+                $characterExpressions[$character] = $this->generateEscapedExpression($substitutionOptions, [], '+') . self::SEPARATOR_PLACEHOLDER;
+            }
         }
 
         return $characterExpressions;
@@ -97,13 +118,43 @@ class ProfanityExpressionGenerator implements ExpressionGeneratorInterface
      */
     public function generateProfanityExpression(string $profanity, array $substitutionExpressions, string $separatorExpression): string
     {
-        $expression = preg_replace(array_keys($substitutionExpressions), array_values($substitutionExpressions), $profanity);
+        // Build plain-key lookup: strip regex delimiters from keys
+        $plainSubstitutions = [];
+        foreach ($substitutionExpressions as $pattern => $replacement) {
+            $plainKey = trim($pattern, '/');
+            $plainSubstitutions[$plainKey] = $replacement;
+        }
+
+        // Sort by key length descending so multi-char keys (ph, qu) match first
+        uksort($plainSubstitutions, function ($a, $b) {
+            return mb_strlen($b, 'UTF-8') - mb_strlen($a, 'UTF-8');
+        });
+
+        // Single-pass: walk through profanity, match longest key at each position
+        $expression = '';
+        $i = 0;
+        $len = mb_strlen($profanity, 'UTF-8');
+
+        while ($i < $len) {
+            $matched = false;
+            foreach ($plainSubstitutions as $key => $replacement) {
+                $keyLen = mb_strlen($key, 'UTF-8');
+                if ($i + $keyLen <= $len && mb_substr($profanity, $i, $keyLen, 'UTF-8') === $key) {
+                    $expression .= $replacement;
+                    $i += $keyLen;
+                    $matched = true;
+                    break;
+                }
+            }
+            if (!$matched) {
+                $expression .= preg_quote(mb_substr($profanity, $i, 1, 'UTF-8'), '/');
+                $i++;
+            }
+        }
 
         $expression = str_replace(self::SEPARATOR_PLACEHOLDER, $separatorExpression, $expression);
-
-        // Allow for non-word characters or spaces around the profanity
         $expression = '/' . $expression . '/i';
-        
+
         return $expression;
     }
 
