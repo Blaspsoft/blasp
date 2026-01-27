@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Facade;
 use Blaspsoft\Blasp\BlaspService;
 
 /**
- * @method static \Blaspsoft\Blasp\BlaspService check(string $string)
+ * @method static \Blaspsoft\Blasp\BlaspService check(?string $string)
  * @method static \Blaspsoft\Blasp\BlaspService configure(?array $profanities = null, ?array $falsePositives = null)
  * @method static \Blaspsoft\Blasp\BlaspService language(string $language)
  * @method static \Blaspsoft\Blasp\BlaspService english()
@@ -117,10 +117,10 @@ class Blasp extends Facade
     /**
      * Check text for profanity (backwards compatible)
      *
-     * @param string $string
+     * @param string|null $string
      * @return \Blaspsoft\Blasp\BlaspService
      */
-    public static function check(string $string): BlaspService
+    public static function check(?string $string): BlaspService
     {
         return static::getFacadeRoot()->check($string);
     }

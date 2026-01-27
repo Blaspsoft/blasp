@@ -246,15 +246,19 @@ class BlaspService
     }
 
     /**
-     * @param string $string
+     * @param string|null $string
      * @return $this
-     * @throws Exception
      */
-    public function check(string $string): self
+    public function check(?string $string): self
     {
         if (empty($string)) {
-
-            throw new Exception('No string to check');
+            $this->sourceString = $string ?? '';
+            $this->cleanString = $string ?? '';
+            $this->hasProfanity = false;
+            $this->profanitiesCount = 0;
+            $this->uniqueProfanitiesFound = [];
+            $this->uniqueProfanitiesMap = [];
+            return $this;
         }
 
         $this->sourceString = $string;
