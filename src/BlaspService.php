@@ -257,6 +257,10 @@ class BlaspService
             throw new Exception('No string to check');
         }
 
+        if (!mb_check_encoding($string, 'UTF-8')) {
+            $string = mb_convert_encoding($string, 'UTF-8', 'UTF-8');
+        }
+
         $this->sourceString = $string;
 
         $this->cleanString = $string;
