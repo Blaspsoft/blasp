@@ -45,17 +45,17 @@ class UuidFalsePositiveTest extends TestCase
 
     public function test_short_hex_does_not_suppress_profanity()
     {
-        // "ass" alone is not inside a long hex token, should still be caught
-        $result = Blasp::check('ass');
+        // Short hex token (< 8 chars) should not be suppressed
+        $result = Blasp::check('800b');
         $this->assertTrue($result->hasProfanity());
     }
 
     public function test_pure_letter_hex_does_not_suppress_profanity()
     {
-        // "deadbeef" has no digits, so the hex guard should not activate
-        // and any profanity substring can still be caught
-        $result = Blasp::check('boob');
+        // Pure-letter hex has no digits, so the guard should not activate
+        $result = Blasp::check('fuck deadbeef');
         $this->assertTrue($result->hasProfanity());
+        $this->assertContains('fuck', $result->getUniqueProfanitiesFound());
     }
 
     public function test_md5_hash_not_flagged()
