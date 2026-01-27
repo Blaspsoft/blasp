@@ -307,6 +307,11 @@ class BlaspService
                             continue;  // Skip this match as it spans word boundaries
                         }
 
+                        // Check if the match is inside a hex/UUID token
+                        if ($this->isInsideHexToken($normalizedString, $start, $length)) {
+                            continue;
+                        }
+
                         // Use boundaries to extract the full word around the match
                         $fullWord = $this->getFullWordContext($normalizedString, $start, $length);
 
@@ -352,10 +357,46 @@ class BlaspService
     }
 
     /**
-     * Determine whether a matched substring inappropriately spans word boundaries (and should be treated as a cross-word match).
-     *
-     * @param string $matchedText The substring captured by the detector, possibly containing internal whitespace or obfuscation.
-     * @return bool `true` if the match spans word boundaries and should be rejected, `false` otherwise.
+     * Check if a match falls inside a hex-like token (UUID, MD5, SHA hash, hex color, etc.).
+     */
+    private function isInsideHexToken(string $string, int $start, int $length): bool
+    {
+        $end = $start + $length;
+        $strLen = strlen($string);
+
+        // Expand left to find start of contiguous hex+hyphen token
+        $tokenStart = $start;
+        while ($tokenStart > 0 && preg_match('/[0-9a-fA-F\-]/', $string[$tokenStart - 1])) {
+            $tokenStart--;
+        }
+
+        // Expand right
+        $tokenEnd = $end;
+        while ($tokenEnd < $strLen && preg_match('/[0-9a-fA-F\-]/', $string[$tokenEnd])) {
+            $tokenEnd++;
+        }
+
+        $token = substr($string, $tokenStart, $tokenEnd - $tokenStart);
+
+        // Trim leading/trailing hyphens
+        $token = trim($token, '-');
+
+        // If the token matches a UUID pattern, reject
+        if (preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/', $token)) {
+            return true;
+        }
+
+        // Strip hyphens and check for a long hex string containing digits
+        $stripped = str_replace('-', '', $token);
+        if (strlen($stripped) >= 8 && preg_match('/^[0-9a-fA-F]+$/', $stripped) && preg_match('/[0-9]/', $stripped)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether a matched substring inappropriately spans word boundaries.
      */
     private function isSpanningWordBoundary(string $matchedText): bool
     {
