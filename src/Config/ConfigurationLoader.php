@@ -80,28 +80,11 @@ class ConfigurationLoader
 
         $separators = config('blasp.separators');
 
-        // Load substitutions - start with main config, then merge language-specific
+        // Use main config substitutions for all languages.
+        // Language-specific substitutions in config files are not merged because
+        // they often contain circular references (e.g., c→k and k→c) that cause
+        // regex conflicts when combined with the main config's comprehensive patterns.
         $substitutions = config('blasp.substitutions');
-        try {
-            $languageData = $this->loadLanguage($targetLanguage);
-            if (isset($languageData['substitutions']) && is_array($languageData['substitutions'])) {
-                // Only merge substitutions for basic a-z letters to avoid regex conflicts.
-                // Accented character patterns (like /ù/, /é/) can cause issues when they
-                // match inside already-substituted character classes.
-                foreach ($languageData['substitutions'] as $pattern => $values) {
-                    // Only include patterns for single ASCII letters: /a/ through /z/
-                    if (preg_match('#^/[a-z]/$#i', $pattern) && is_array($values)) {
-                        // Merge with existing substitutions to preserve base variants
-                        $substitutions[$pattern] = array_values(array_unique(array_merge(
-                            $substitutions[$pattern] ?? [],
-                            $values
-                        )));
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            // Keep main config substitutions
-        }
 
         $config = new DetectionConfig(
             $profanities,
