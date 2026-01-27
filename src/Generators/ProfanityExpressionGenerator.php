@@ -153,7 +153,7 @@ class ProfanityExpressionGenerator implements ExpressionGeneratorInterface
         }
 
         $expression = str_replace(self::SEPARATOR_PLACEHOLDER, $separatorExpression, $expression);
-        $expression = '/' . $expression . '/i';
+        $expression = '/' . $expression . '/iu';
 
         return $expression;
     }
