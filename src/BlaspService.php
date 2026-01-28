@@ -433,22 +433,24 @@ class BlaspService
         }
 
         // Check if match is embedded in a larger word
-        $matchEnd = $matchStart + mb_strlen($matchedText, 'UTF-8');
+        // Note: preg_match_all returns byte offsets, convert to character offset for mb_* ops
+        $matchStartChar = mb_strlen(substr($fullString, 0, $matchStart), 'UTF-8');
+        $matchEndChar = $matchStartChar + mb_strlen($matchedText, 'UTF-8');
 
         $embeddedAtStart = false;
         $embeddedAtEnd = false;
 
         // Character before match?
-        if ($matchStart > 0) {
-            $charBefore = mb_substr($fullString, $matchStart - 1, 1, 'UTF-8');
+        if ($matchStartChar > 0) {
+            $charBefore = mb_substr($fullString, $matchStartChar - 1, 1, 'UTF-8');
             if (preg_match('/\w/u', $charBefore)) {
                 $embeddedAtStart = true;
             }
         }
 
         // Character after match?
-        if ($matchEnd < mb_strlen($fullString, 'UTF-8')) {
-            $charAfter = mb_substr($fullString, $matchEnd, 1, 'UTF-8');
+        if ($matchEndChar < mb_strlen($fullString, 'UTF-8')) {
+            $charAfter = mb_substr($fullString, $matchEndChar, 1, 'UTF-8');
             if (preg_match('/\w/u', $charAfter)) {
                 $embeddedAtEnd = true;
             }
