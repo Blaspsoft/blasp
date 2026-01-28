@@ -311,7 +311,7 @@ class BlaspService
                         $matchedText = $match[0];
 
                         // Check if the match inappropriately spans across word boundaries
-                        if ($this->isSpanningWordBoundary($matchedText)) {
+                        if ($this->isSpanningWordBoundary($matchedText, $normalizedString, $start)) {
                             continue;  // Skip this match as it spans word boundaries
                         }
 
@@ -406,42 +406,83 @@ class BlaspService
     /**
      * Determine whether a matched substring inappropriately spans word boundaries.
      */
-    private function isSpanningWordBoundary(string $matchedText): bool
+    private function isSpanningWordBoundary(string $matchedText, string $fullString, int $matchStart): bool
     {
-        // If the match contains spaces, it might be spanning word boundaries
-        if (preg_match('/\s+/', $matchedText)) {
-            $parts = preg_split('/\s+/', $matchedText);
+        // No spaces = not spanning
+        if (!preg_match('/\s+/', $matchedText)) {
+            return false;
+        }
 
-            if (count($parts) > 1) {
-                // Count how many parts are single characters
-                $singleCharCount = 0;
-                foreach ($parts as $part) {
-                    if (strlen($part) === 1 && preg_match('/[a-z]/i', $part)) {
-                        $singleCharCount++;
-                    }
-                }
+        $parts = preg_split('/\s+/', $matchedText);
 
-                // If ALL parts are single characters, this is intentional obfuscation
-                // (e.g., "f u c k i n g") - allow it
-                if ($singleCharCount === count($parts)) {
-                    return false;
-                }
+        if (count($parts) <= 1) {
+            return false;
+        }
 
-                // If SOME parts are single characters at edges, this is likely
-                // a cross-word match (e.g., "t êt" from "pourrait être") - reject it
-                $firstPart = $parts[0];
-                $lastPart = end($parts);
-
-                if (strlen($lastPart) === 1 && preg_match('/[a-z]/i', $lastPart)) {
-                    return true;
-                }
-
-                if (strlen($firstPart) === 1 && preg_match('/[a-z]/i', $firstPart)) {
-                    return true;
-                }
+        // Count single-character parts
+        $singleCharCount = 0;
+        foreach ($parts as $part) {
+            if (mb_strlen($part, 'UTF-8') === 1 && preg_match('/[a-z]/iu', $part)) {
+                $singleCharCount++;
             }
         }
 
+        // ALL parts are single characters = definitely intentional (e.g., "f u c k i n g")
+        if ($singleCharCount === count($parts)) {
+            return false;
+        }
+
+        // Check if match is embedded in a larger word
+        $matchEnd = $matchStart + mb_strlen($matchedText, 'UTF-8');
+
+        $embeddedAtStart = false;
+        $embeddedAtEnd = false;
+
+        // Character before match?
+        if ($matchStart > 0) {
+            $charBefore = mb_substr($fullString, $matchStart - 1, 1, 'UTF-8');
+            if (preg_match('/\w/u', $charBefore)) {
+                $embeddedAtStart = true;
+            }
+        }
+
+        // Character after match?
+        if ($matchEnd < mb_strlen($fullString, 'UTF-8')) {
+            $charAfter = mb_substr($fullString, $matchEnd, 1, 'UTF-8');
+            if (preg_match('/\w/u', $charAfter)) {
+                $embeddedAtEnd = true;
+            }
+        }
+
+        // If embedded on BOTH sides, it's completely within text - reject
+        if ($embeddedAtStart && $embeddedAtEnd) {
+            return true;
+        }
+
+        // If embedded only at START: check if first part is single-char (likely accidental)
+        // If first part is multi-char, the regex was just greedy - allow it
+        if ($embeddedAtStart && !$embeddedAtEnd) {
+            $firstPart = $parts[0];
+            // If first part is a single letter, this is likely accidental word spanning
+            // (e.g., "s hit" from "musicals hit" where 's' is from "musicals")
+            if (mb_strlen($firstPart, 'UTF-8') === 1 && preg_match('/[a-z]/iu', $firstPart)) {
+                return true;
+            }
+            // If first part is multi-char, the regex was greedy but there's still
+            // a valid profanity in the non-embedded portion (e.g., "as @ss" from "has @ss")
+            return false;
+        }
+
+        // If embedded only at END: check if last part is single-char (likely accidental)
+        if (!$embeddedAtStart && $embeddedAtEnd) {
+            $lastPart = end($parts);
+            if (mb_strlen($lastPart, 'UTF-8') === 1 && preg_match('/[a-z]/iu', $lastPart)) {
+                return true;
+            }
+            return false;
+        }
+
+        // Standalone partial spacing = intentional obfuscation
         return false;
     }
 
