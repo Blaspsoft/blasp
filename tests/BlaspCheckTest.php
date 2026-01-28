@@ -306,4 +306,46 @@ class BlaspCheckTest extends TestCase
 
         $this->assertTrue($result->hasProfanity);
     }
+
+    public function test_partial_spacing_s_hit()
+    {
+        $result = $this->blaspService->check('s hit');
+        $this->assertTrue($result->hasProfanity);
+        $this->assertContains('shit', $result->uniqueProfanitiesFound);
+    }
+
+    public function test_partial_spacing_f_uck()
+    {
+        $result = $this->blaspService->check('f uck');
+        $this->assertTrue($result->hasProfanity);
+        $this->assertContains('fuck', $result->uniqueProfanitiesFound);
+    }
+
+    public function test_partial_spacing_t_wat()
+    {
+        $result = $this->blaspService->check('t wat');
+        $this->assertTrue($result->hasProfanity);
+        $this->assertContains('twat', $result->uniqueProfanitiesFound);
+    }
+
+    public function test_partial_spacing_fu_c_k()
+    {
+        $result = $this->blaspService->check('fu c k');
+        $this->assertTrue($result->hasProfanity);
+        $this->assertContains('fuck', $result->uniqueProfanitiesFound);
+    }
+
+    public function test_partial_spacing_tw_a_t()
+    {
+        $result = $this->blaspService->check('tw a t');
+        $this->assertTrue($result->hasProfanity);
+        $this->assertContains('twat', $result->uniqueProfanitiesFound);
+    }
+
+    public function test_no_false_positive_musicals_hit_embedded()
+    {
+        $result = $this->blaspService->check('This musicals hit');
+        $this->assertFalse($result->hasProfanity);
+        $this->assertSame('This musicals hit', $result->cleanString);
+    }
 }
