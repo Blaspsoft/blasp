@@ -1,11 +1,14 @@
 <p align="center">
     <img src="./assets/icon.png" alt="Blasp Icon" width="150" height="150"/>
-    <p align="center">
-        <a href="https://github.com/Blaspsoft/blasp/actions/workflows/main.yml"><img alt="GitHub Workflow Status (main)" src="https://github.com/Blaspsoft/blasp/actions/workflows/main.yml/badge.svg"></a>
-        <a href="https://packagist.org/packages/blaspsoft/blasp"><img alt="Total Downloads" src="https://img.shields.io/packagist/dt/blaspsoft/blasp"></a>
-        <a href="https://packagist.org/packages/blaspsoft/blasp"><img alt="Latest Version" src="https://img.shields.io/packagist/v/blaspsoft/blasp"></a>
-        <a href="https://packagist.org/packages/blaspsoft/blasp"><img alt="License" src="https://img.shields.io/packagist/l/blaspsoft/blasp"></a>
-    </p>
+</p>
+
+> **🚀 Official API Available!** This package powers [blasp.app](https://blasp.app/) - a universal profanity filtering REST API that works with any language. Free tier with 1,000 requests/month, multi-language support, and custom word lists.
+
+<p align="center">
+    <a href="https://github.com/Blaspsoft/blasp/actions/workflows/main.yml"><img alt="GitHub Workflow Status (main)" src="https://github.com/Blaspsoft/blasp/actions/workflows/main.yml/badge.svg"></a>
+    <a href="https://packagist.org/packages/blaspsoft/blasp"><img alt="Total Downloads" src="https://img.shields.io/packagist/dt/blaspsoft/blasp"></a>
+    <a href="https://packagist.org/packages/blaspsoft/blasp"><img alt="Latest Version" src="https://img.shields.io/packagist/v/blaspsoft/blasp"></a>
+    <a href="https://packagist.org/packages/blaspsoft/blasp"><img alt="License" src="https://img.shields.io/packagist/l/blaspsoft/blasp"></a>
 </p>
 
 # Blasp - Advanced Profanity Filter for Laravel
@@ -146,6 +149,7 @@ php artisan vendor:publish --tag="blasp-languages"
 ```
 
 This will publish:
+
 - `config/blasp.php` - Main configuration with default language settings
 - `config/languages/` - Language-specific profanity lists (English, Spanish, German, French)
 
@@ -180,7 +184,6 @@ $blasp = Blasp::configure(
 
 This is particularly useful when you need different profanity rules for specific contexts, such as username validation.
 
-
 ## 🚀 Advanced Features (v3.0+)
 
 ### All Languages Detection
@@ -205,7 +208,6 @@ Blasp includes comprehensive support for multiple languages with automatic chara
 - **Spanish**: Handles accent normalization (á→a, ñ→n)
 - **German**: Processes umlauts (ä→ae, ö→oe, ü→ue) and ß→ss
 - **French**: Accent and cedilla normalization
-
 
 ### Complete Chainable Methods Reference
 
@@ -314,6 +316,7 @@ Blasp v3.0 includes significant performance optimizations:
 ### Benchmarks
 
 Version 3.0 shows substantial performance improvements over v2:
+
 - **Expression Processing**: 60% faster profanity expression generation
 - **Detection Speed**: 40% faster text analysis with large profanity lists
 - **Memory Usage**: 30% reduction in memory footprint
