@@ -348,4 +348,27 @@ class BlaspCheckTest extends TestCase
         $this->assertFalse($result->hasProfanity);
         $this->assertSame('This musicals hit', $result->cleanString);
     }
+
+    public function test_no_false_positive_an_alert()
+    {
+        // "an alert" should NOT flag "anal" - these are two separate words
+        $result = $this->blaspService->check('an alert');
+        $this->assertFalse($result->hasProfanity);
+        $this->assertSame('an alert', $result->cleanString);
+    }
+
+    public function test_no_false_positive_has_5_faces()
+    {
+        // "has 5 faces" should NOT flag "ass" - the 5 is just a number
+        $result = $this->blaspService->check('the user has 5 faces');
+        $this->assertFalse($result->hasProfanity);
+        $this->assertSame('the user has 5 faces', $result->cleanString);
+    }
+
+    public function test_detects_at_ss_obfuscation()
+    {
+        // "@ss" should be detected as intentional obfuscation
+        $result = $this->blaspService->check('This has @ss in it');
+        $this->assertTrue($result->hasProfanity);
+    }
 }

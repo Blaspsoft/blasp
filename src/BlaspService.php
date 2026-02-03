@@ -461,27 +461,40 @@ class BlaspService
             return true;
         }
 
-        // If embedded only at START: check if first part is single-char (likely accidental)
-        // If first part is multi-char, the regex was just greedy - allow it
+        // If embedded at START: check if the standalone (non-embedded) portion looks like
+        // intentional obfuscation. It's intentional if it contains BOTH letters AND non-letter
+        // characters (e.g., "@ss" has letters and @, so it's intentional).
+        // Pure letters ("al") or pure non-letters ("5") are likely false positives.
         if ($embeddedAtStart && !$embeddedAtEnd) {
-            $firstPart = $parts[0];
-            // If first part is a single letter, this is likely accidental word spanning
-            // (e.g., "s hit" from "musicals hit" where 's' is from "musicals")
-            if (mb_strlen($firstPart, 'UTF-8') === 1 && preg_match('/[a-z]/iu', $firstPart)) {
-                return true;
+            // Get the non-embedded (standalone) portion
+            $standaloneParts = array_slice($parts, 1);
+            $standalonePortion = implode(' ', $standaloneParts);
+
+            // Check if it looks like intentional obfuscation:
+            // Must contain at least one letter AND at least one non-letter/non-space
+            $hasLetter = preg_match('/[a-z]/iu', $standalonePortion);
+            $hasNonLetter = preg_match('/[^a-z\s]/iu', $standalonePortion);
+
+            if ($hasLetter && $hasNonLetter) {
+                return false; // Looks intentional (e.g., "@ss"), allow
             }
-            // If first part is multi-char, the regex was greedy but there's still
-            // a valid profanity in the non-embedded portion (e.g., "as @ss" from "has @ss")
-            return false;
+            return true; // Likely false positive (e.g., "5" or "faces"), reject
         }
 
-        // If embedded only at END: check if last part is single-char (likely accidental)
+        // If embedded at END: same check for the standalone portion
         if (!$embeddedAtStart && $embeddedAtEnd) {
-            $lastPart = end($parts);
-            if (mb_strlen($lastPart, 'UTF-8') === 1 && preg_match('/[a-z]/iu', $lastPart)) {
-                return true;
+            // Get the non-embedded (standalone) portion
+            $standaloneParts = array_slice($parts, 0, -1);
+            $standalonePortion = implode(' ', $standaloneParts);
+
+            // Check if it looks like intentional obfuscation
+            $hasLetter = preg_match('/[a-z]/iu', $standalonePortion);
+            $hasNonLetter = preg_match('/[^a-z\s]/iu', $standalonePortion);
+
+            if ($hasLetter && $hasNonLetter) {
+                return false; // Looks intentional, allow
             }
-            return false;
+            return true; // Likely false positive (e.g., "an" from "an alert"), reject
         }
 
         // Standalone partial spacing = intentional obfuscation
