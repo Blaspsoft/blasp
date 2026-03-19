@@ -8,6 +8,7 @@ use Blaspsoft\Blasp\Core\Normalizers\StringNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\EnglishNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\SpanishNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\GermanNormalizer;
+use Blaspsoft\Blasp\Core\Normalizers\DutchNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\FrenchNormalizer;
 use Illuminate\Support\Facades\Cache;
 
@@ -325,6 +326,7 @@ class Dictionary
                 'spanish' => new SpanishNormalizer(),
                 'german' => new GermanNormalizer(),
                 'french' => new FrenchNormalizer(),
+                'dutch' => new DutchNormalizer(),
                 default => new EnglishNormalizer(),
             };
         }
