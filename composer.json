@@ -1,55 +1,55 @@
 {
-  "name": "blaspsoft/blasp",
-  "description": "Blasp is a powerful and customisable profanity filter package for Laravel applications",
-  "keywords": [
-    "blaspsoft",
-    "blasp"
-  ],
-  "homepage": "https://github.com/blaspsoft/blasp",
-  "license": "MIT",
-  "type": "library",
-  "authors": [
-    {
-      "name": "Michael Deeming",
-      "email": "michael.deeming90@gmail.com",
-      "role": "Developer"
+    "name": "blaspsoft/blasp",
+    "description": "Blasp is a powerful and customisable profanity filter package for Laravel applications",
+    "keywords": [
+        "blaspsoft",
+        "blasp"
+    ],
+    "homepage": "https://github.com/blaspsoft/blasp",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Michael Deeming",
+            "email": "michael.deeming90@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^8.0|^9.0|^10.0|^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^11.0|^12.5.12"
+    },
+    "autoload": {
+        "psr-4": {
+            "Blaspsoft\\Blasp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Blaspsoft\\Blasp\\Tests\\": "tests"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Blaspsoft\\Blasp\\BlaspServiceProvider"
+            ],
+            "aliases": {
+                "Blasp": "Blaspsoft\\Blasp\\Facades\\Blasp"
+            }
+        }
     }
-  ],
-  "require": {
-    "php": "^8.2",
-    "illuminate/support": "^8.0|^9.0|^10.0|^11.0|^12.0"
-  },
-  "require-dev": {
-    "orchestra/testbench": "^10.0",
-    "phpunit/phpunit": "^11.0"
-  },
-  "autoload": {
-    "psr-4": {
-      "Blaspsoft\\Blasp\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "Blaspsoft\\Blasp\\Tests\\": "tests"
-    }
-  },
-  "minimum-stability": "stable",
-  "prefer-stable": true,
-  "scripts": {
-    "test": "vendor/bin/phpunit",
-    "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
-  },
-  "config": {
-    "sort-packages": true
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "Blaspsoft\\Blasp\\BlaspServiceProvider"
-      ],
-      "aliases": {
-        "Blasp": "Blaspsoft\\Blasp\\Facades\\Blasp"
-      }
-    }
-  }
 }
