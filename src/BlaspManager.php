@@ -78,6 +78,10 @@ class BlaspManager
         $config = $this->app['config']->get('blasp.drivers.pipeline', []);
         $driverNames = $config['drivers'] ?? ['regex', 'phonetic'];
 
+        if (in_array('pipeline', $driverNames, true)) {
+            throw new InvalidArgumentException('Pipeline driver cannot contain itself. Remove "pipeline" from blasp.drivers.pipeline.drivers.');
+        }
+
         $resolvedDrivers = array_map(
             fn (string $name) => $this->resolveDriver($name),
             $driverNames,

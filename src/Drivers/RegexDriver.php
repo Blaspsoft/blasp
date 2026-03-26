@@ -109,7 +109,7 @@ class RegexDriver implements DriverInterface
             }
         }
 
-        // Apply severity filter if set
+        // Apply severity filter before masking so low-severity matches don't suppress overlapping ones
         $minimumSeverity = $options['severity'] ?? null;
         if ($minimumSeverity instanceof Severity) {
             $matchedWords = array_values(array_filter(
