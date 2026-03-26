@@ -4,7 +4,7 @@ return [
     'severity' => [
         'mild' => [
             'crotte', 'crottes', 'caca', 'cacas', 'zut',
-            'mince', 'flûte', 'flute', 'punaise',
+            'punaise',
             'idiot', 'idiots', 'idiote', 'idiotes',
             'bête', 'bete', 'bêtes', 'betes',
             'sot', 'sots', 'sotte', 'sottes',
@@ -1537,9 +1537,6 @@ return [
         'réfrigérations',
         'refrigerations',
         'zut',
-        'mince',
-        'flûte',
-        'flute',
         'punaise',
     ],
     

@@ -318,6 +318,14 @@ class PendingCheck
         $cache = $this->getCache();
         $keys = $cache->get('blasp_result_cache_keys', []);
         $keys[] = $key;
-        $cache->forever('blasp_result_cache_keys', array_unique($keys));
+        $keys = array_unique($keys);
+
+        // Evict oldest keys when exceeding the configured limit
+        $maxKeys = config('blasp.cache.max_tracked_keys', 1000);
+        if (count($keys) > $maxKeys) {
+            $keys = array_slice($keys, -$maxKeys);
+        }
+
+        $cache->forever('blasp_result_cache_keys', $keys);
     }
 }

@@ -65,7 +65,7 @@ class PipelineDriver implements DriverInterface
         $reversed = array_reverse($kept);
         foreach ($reversed as $match) {
             $replacement = $mask->mask($match->text, $match->length);
-            $cleanText = mb_substr($cleanText, 0, $match->position) . $replacement . mb_substr($cleanText, $match->position + $match->length);
+            $cleanText = mb_substr($cleanText, 0, $match->position, 'UTF-8') . $replacement . mb_substr($cleanText, $match->position + $match->length, null, 'UTF-8');
         }
 
         // 5. Recalculate score from merged matches
