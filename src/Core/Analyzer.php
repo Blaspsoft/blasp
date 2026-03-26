@@ -19,7 +19,7 @@ class Analyzer
 
         // Strip invisible Unicode format characters (zero-width spaces, invisible separators, etc.)
         // before any driver sees the text, ensuring consistent positions across pipeline drivers
-        $text = preg_replace('/\p{Cf}/u', '', $text);
+        $text = preg_replace('/\p{Cf}/u', '', $text) ?? $text;
 
         return $driver->detect($text, $dictionary, $mask, $options);
     }
