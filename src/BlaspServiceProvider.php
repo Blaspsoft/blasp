@@ -6,8 +6,6 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
-use Blaspsoft\Blasp\Core\Dictionary;
-
 class BlaspServiceProvider extends ServiceProvider
 {
     public function boot(): void
@@ -53,6 +51,10 @@ class BlaspServiceProvider extends ServiceProvider
     protected function registerValidationRule(): void
     {
         $this->app['validator']->extend('blasp_check', function ($attribute, $value, $parameters) {
+            if (!is_string($value) || $value === '') {
+                return true;
+            }
+
             $language = $parameters[0] ?? config('blasp.language', config('blasp.default_language', 'english'));
 
             $manager = $this->app->make('blasp');

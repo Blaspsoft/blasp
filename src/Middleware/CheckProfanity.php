@@ -22,10 +22,10 @@ class CheckProfanity
         $fields = config('blasp.middleware.fields', ['*']);
         $except = config('blasp.middleware.except', ['password', 'email', '_token']);
 
-        $input = $request->except($except);
-
         if ($fields !== ['*']) {
-            $input = $request->only($fields);
+            $input = collect($request->only($fields))->except($except)->all();
+        } else {
+            $input = $request->except($except);
         }
 
         $textFields = $this->extractTextFields($input);

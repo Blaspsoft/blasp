@@ -51,6 +51,6 @@ class StrMacroTest extends TestCase
 
     public function test_stringable_clean_profanity_returns_clean_text_unchanged()
     {
-        $this->assertSame('hello', Str::of('hello')->cleanProfanity()->toString());
+        $this->assertSame('hello', (string) Str::of('hello')->cleanProfanity());
     }
 }

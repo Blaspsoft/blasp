@@ -92,12 +92,13 @@ trait Blaspable
 
     public static function withoutBlaspChecking(Closure $callback): mixed
     {
+        $previousState = static::$blaspCheckingDisabled;
         static::$blaspCheckingDisabled = true;
 
         try {
             return $callback();
         } finally {
-            static::$blaspCheckingDisabled = false;
+            static::$blaspCheckingDisabled = $previousState;
         }
     }
 }

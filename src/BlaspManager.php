@@ -78,6 +78,20 @@ class BlaspManager
         $config = $this->app['config']->get('blasp.drivers.pipeline', []);
         $driverNames = $config['drivers'] ?? ['regex', 'phonetic'];
 
+        if (!is_array($driverNames)) {
+            throw new InvalidArgumentException('blasp.drivers.pipeline.drivers must be an array of driver names.');
+        }
+
+        foreach ($driverNames as $name) {
+            if (!is_string($name) || trim($name) === '') {
+                throw new InvalidArgumentException('Each pipeline driver name must be a non-empty string.');
+            }
+
+            if (strtolower(trim($name)) === 'pipeline') {
+                throw new InvalidArgumentException('Pipeline driver cannot contain itself. Remove "pipeline" from blasp.drivers.pipeline.drivers.');
+            }
+        }
+
         $resolvedDrivers = array_map(
             fn (string $name) => $this->resolveDriver($name),
             $driverNames,

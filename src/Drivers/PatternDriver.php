@@ -57,6 +57,15 @@ class PatternDriver implements DriverInterface
             }
         }
 
+        // Apply severity filter before dedup so shorter high-severity matches aren't swallowed
+        $minimumSeverity = $options['severity'] ?? null;
+        if ($minimumSeverity instanceof Severity) {
+            $matchedWords = array_values(array_filter(
+                $matchedWords,
+                fn(MatchedWord $w) => $w->severity->isAtLeast($minimumSeverity)
+            ));
+        }
+
         // Deduplicate overlapping matches (longest-first already recorded)
         usort($matchedWords, fn($a, $b) => $a->position - $b->position ?: $b->length - $a->length);
         $deduplicated = [];
@@ -68,15 +77,6 @@ class PatternDriver implements DriverInterface
             }
         }
         $matchedWords = $deduplicated;
-
-        // Apply severity filter
-        $minimumSeverity = $options['severity'] ?? null;
-        if ($minimumSeverity instanceof Severity) {
-            $matchedWords = array_values(array_filter(
-                $matchedWords,
-                fn(MatchedWord $w) => $w->severity->isAtLeast($minimumSeverity)
-            ));
-        }
 
         // Rebuild cleanText from surviving matches (right-to-left)
         $cleanText = $text;
