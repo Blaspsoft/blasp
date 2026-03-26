@@ -27,9 +27,6 @@ class RegexDriver implements DriverInterface
             $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         }
 
-        // Strip invisible Unicode format characters (zero-width spaces, invisible separators, etc.)
-        $text = preg_replace('/\p{Cf}/u', '', $text);
-
         $this->filter = new FalsePositiveFilter($dictionary->getFalsePositives());
         $this->compoundDetector = new CompoundWordDetector();
 
