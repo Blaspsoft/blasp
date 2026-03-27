@@ -105,7 +105,9 @@ class RegexDriver implements DriverInterface
                         $continue = true;
 
                         // Mask in normalizedString only (needed for loop termination)
-                        $normalizedString = mb_substr($normalizedString, 0, $start) . str_repeat('*', $length) .
+                        // Use SOH control char internally to avoid re-matching when '*' is
+                        // a valid substitution character in profanity patterns
+                        $normalizedString = mb_substr($normalizedString, 0, $start) . str_repeat("\x01", $length) .
                             mb_substr($normalizedString, $start + $length);
 
                         // Record masked range using character positions from immutable string
