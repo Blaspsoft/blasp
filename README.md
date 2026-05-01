@@ -2,8 +2,6 @@
     <img src="./assets/icon.png" alt="Blasp Icon" width="150" height="150"/>
 </p>
 
-> **Official API Available!** This package powers [blasp.app](https://blasp.app/) - a universal profanity filtering REST API that works with any language. Free tier with 1,000 requests/month, multi-language support, and custom word lists.
-
 <p align="center">
     <a href="https://github.com/Blaspsoft/blasp/actions/workflows/main.yml"><img alt="GitHub Workflow Status (main)" src="https://github.com/Blaspsoft/blasp/actions/workflows/main.yml/badge.svg"></a>
     <a href="https://packagist.org/packages/blaspsoft/blasp"><img alt="Total Downloads" src="https://img.shields.io/packagist/dt/blaspsoft/blasp"></a>
