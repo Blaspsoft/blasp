@@ -52,7 +52,7 @@ class RegexMatcher
 
         $pattern = $this->generateEscapedExpression($normalSeparators, self::ESCAPED_SEPARATOR_CHARACTERS, '');
 
-        return '(?:' . $pattern . ($allowDot ? '|\.(?=\w)' : '') . '){0,3}?';
+        return '(?:' . $pattern . ($allowDot ? '|\.(?=[\p{L}\p{N}\p{M}_])' : '') . '){0,3}?';
     }
 
     public function generateSubstitutionExpressions(array $substitutions): array
@@ -110,7 +110,13 @@ class RegexMatcher
                 }
             }
             if (!$matched) {
-                $expression .= preg_quote(mb_substr($profanity, $i, 1, 'UTF-8'), '/');
+                $char = mb_substr($profanity, $i, 1, 'UTF-8');
+                $expression .= preg_quote($char, '/');
+                // Letters and combining marks with no substitution entry (e.g. Devanagari)
+                // still get separator tolerance so "मा-दर-चोद" matches like "f-u-c-k"
+                if (preg_match('/^[\p{L}\p{M}]$/u', $char)) {
+                    $expression .= self::SEPARATOR_PLACEHOLDER;
+                }
                 $i++;
             }
         }
@@ -176,7 +182,13 @@ class RegexMatcher
             }
 
             $char = mb_substr($profanity, $i, 1, 'UTF-8');
-            $sequence[] = ['pattern' => preg_quote($char, '/'), 'chars' => [$char], 'literal' => true];
+            // Letters and combining marks with no substitution entry (e.g. Devanagari) still
+            // take separators, so "मा-दर-चोद" matches like "f-u-c-k"; other literals do not
+            $sequence[] = [
+                'pattern' => preg_quote($char, '/'),
+                'chars' => [$char],
+                'literal' => !preg_match('/^[\p{L}\p{M}]$/u', $char),
+            ];
             $i++;
         }
 
@@ -185,12 +197,12 @@ class RegexMatcher
         foreach ($sequence as $index => $unit) {
             $expression .= $unit['pattern'];
 
-            if (isset($unit['literal'])) {
+            if ($unit['literal'] ?? false) {
                 continue;
             }
 
             $next = $sequence[$index + 1] ?? null;
-            $excluded = $next === null || isset($next['literal']) ? [] : $next['chars'];
+            $excluded = $next === null || ($next['literal'] ?? false) ? [] : $next['chars'];
             $expression .= $this->generateSeparatorExpression(array_values(array_diff($separators, $excluded)), !in_array('.', $excluded, true));
         }
 

@@ -4,6 +4,10 @@ namespace Blaspsoft\Blasp\Core\Matchers;
 
 class FalsePositiveFilter
 {
+    // Unicode word character: letters, digits, underscore and combining marks.
+    // PCRE's \w (even with /u) excludes marks, which breaks Devanagari vowel signs.
+    private const WORD_CHAR = '[\p{L}\p{N}\p{M}_]';
+
     private const CONTRACTION_STEMS = [
         'i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'what', 'that', 'there', 'here',
         'let', 'how', 'where', 'why', 'when', 'this', 'these', 'those', 'which', 'one',
@@ -154,12 +158,13 @@ class FalsePositiveFilter
         $left = $start;
         $right = $start + $length;
 
-        while ($left > 0 && preg_match('/\w/', $string[$left - 1])) {
-            $left--;
+        // Extend across multibyte word characters on both sides ($start/$length are byte offsets)
+        if (preg_match('/' . self::WORD_CHAR . '+$/u', substr($string, 0, $start), $m)) {
+            $left -= strlen($m[0]);
         }
 
-        while ($right < strlen($string) && preg_match('/\w/', $string[$right])) {
-            $right++;
+        if (preg_match('/^' . self::WORD_CHAR . '+/u', substr($string, $right), $m)) {
+            $right += strlen($m[0]);
         }
 
         return substr($string, $left, $right - $left);
@@ -224,7 +229,7 @@ class FalsePositiveFilter
         }
 
         $next = $chars[0] ?? '';
-        if ($next !== '' && preg_match('/\w/u', $next)) {
+        if ($next !== '' && preg_match('/' . self::WORD_CHAR . '/u', $next)) {
             return true;
         }
 
