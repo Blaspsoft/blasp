@@ -10,6 +10,7 @@ use Blaspsoft\Blasp\Core\Normalizers\SpanishNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\GermanNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\DutchNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\FrenchNormalizer;
+use Blaspsoft\Blasp\Core\Normalizers\DevanagariNormalizer;
 use Blaspsoft\Blasp\Exceptions\UnknownLanguageException;
 use Illuminate\Support\Facades\Cache;
 
@@ -388,6 +389,7 @@ class Dictionary
                 'german' => new GermanNormalizer(),
                 'french' => new FrenchNormalizer(),
                 'dutch' => new DutchNormalizer(),
+                'hindi', 'nepali' => new DevanagariNormalizer(),
                 default => new EnglishNormalizer(),
             };
         }

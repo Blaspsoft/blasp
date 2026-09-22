@@ -16,7 +16,7 @@ Blasp is a powerful, extensible profanity filter for Laravel. Version 4 is a gro
 ## Features
 
 - **Driver Architecture** — `regex` (detects obfuscation, substitutions, separators), `pattern` (fast exact matching), `phonetic` (catches sound-alike evasions), or `pipeline` (chains multiple drivers together). Extend with custom drivers.
-- **Multi-Language** — English, Spanish, German, French, Dutch with language-specific normalizers. Check one, many, or all at once.
+- **Multi-Language** — English, Spanish, German, French, Dutch, Hindi and Nepali with language-specific normalizers. Hindi and Nepali cover both Devanagari and romanized text. Check one, many, or all at once.
 - **Severity Scoring** — Words categorised as mild/moderate/high/extreme. Filter by minimum severity and get a 0-100 score.
 - **Masking Strategies** — Character mask (`*`, `#`), grawlix (`!@#$%`), or a custom callback.
 - **Eloquent Integration** — `Blaspable` trait auto-sanitizes or rejects profanity on model save.
@@ -81,6 +81,8 @@ Blasp::spanish()->check($text);
 Blasp::german()->check($text);
 Blasp::french()->check($text);
 Blasp::dutch()->check($text);
+Blasp::hindi()->check($text);
+Blasp::nepali()->check($text);
 
 // Driver selection
 Blasp::driver('regex')->check($text);     // Full obfuscation detection (default)
@@ -166,6 +168,21 @@ The phonetic driver uses `metaphone()` + Levenshtein distance to catch words tha
 | Sound-alike | `sheit` | `shit` |
 
 Configure sensitivity in `config/blasp.php` under `drivers.phonetic`. A curated false-positive list prevents common words like "fork", "duck", and "beach" from being flagged.
+
+### Hindi & Nepali
+
+Both languages ship with Devanagari *and* romanized (Latin-script) word lists, so `tu chutiya hai` and `तू चूतिया है` are both caught. On top of the standard obfuscation handling, the following spelling variations are matched automatically:
+
+| Variation | Example | Matches |
+|-----------|---------|---------|
+| Nukta present / absent / precomposed | `भोसड़ी`, `भोसडी` | `भोसडी` |
+| Chandrabindu vs anusvara | `गाँड`, `गांड` | `गांड` |
+| Short vs long vowel signs | `चुतिया`, `चूतिया` | `चूतिया` |
+| Separated characters | `मा-दर-चोद` | `मादरचोद` |
+| Romanized vowels | `chootiya`, `chuteeya`, `mooji` | `chutiya`, `muji` |
+| Romanized consonants | `bhadva`/`bhadwa`, `haramjada`, `phuddu` | `bhadwa`, `haramzada`, `fuddu` |
+
+A few words are intentionally left out because they collide with everyday words (`chakka` is also a cricket six, caste/ethnic terms double as community names). Add them per-project with `Blasp::block(...)` or the `block` config key.
 
 ### Pipeline Driver
 
