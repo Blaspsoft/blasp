@@ -19,6 +19,7 @@ return [
             'bekloppt', 'bekloppte', 'bekloppter', 'beklopptes',
             'schwanz', 'pimmel',
             'hintern', 'po', 'popo',
+            'schwul', 'schwuler', 'schwule', 'schwules',
         ],
         'high' => [
             'scheiße', 'scheisse', 'ficken', 'fick', 'gefickt',
@@ -27,7 +28,6 @@ return [
             'vögeln', 'voegeln', 'bumsen',
         ],
         'extreme' => [
-            'schwul', 'schwuler', 'schwule', 'schwules',
             'tunte', 'tuntig',
             'kampflesbe', 'kampflesben',
             'kanake', 'kanaken',

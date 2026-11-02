@@ -14,14 +14,14 @@ class PhoneticMatcher
         private float $maxDistanceRatio = 0.6,
         private array $phoneticFalsePositives = [],
     ) {
-        $this->phoneticFalsePositives = array_map('strtolower', $this->phoneticFalsePositives);
+        $this->phoneticFalsePositives = array_map(fn($fp) => mb_strtolower($fp, 'UTF-8'), $this->phoneticFalsePositives);
         $this->buildIndex($profanities);
     }
 
     private function buildIndex(array $profanities): void
     {
         foreach ($profanities as $word) {
-            $lower = strtolower($word);
+            $lower = mb_strtolower($word, 'UTF-8');
             if (mb_strlen($lower, 'UTF-8') < $this->minWordLength) {
                 continue;
             }
@@ -62,7 +62,7 @@ class PhoneticMatcher
 
         foreach ($this->index[$code] as $profanity) {
             $distance = levenshtein($lower, $profanity);
-            $maxLen = max(strlen($lower), strlen($profanity));
+            $maxLen = max(mb_strlen($lower, 'UTF-8'), mb_strlen($profanity, 'UTF-8'));
             $threshold = (int) ceil($this->maxDistanceRatio * $maxLen);
 
             if ($distance <= $threshold && $distance < $bestDistance) {

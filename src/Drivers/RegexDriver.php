@@ -30,6 +30,8 @@ class RegexDriver implements DriverInterface
         $this->filter = new FalsePositiveFilter($dictionary->getFalsePositives());
         $this->compoundDetector = new CompoundWordDetector();
 
+        $matchEmbedded = (bool) ($options['match_embedded'] ?? false);
+
         $profanityExpressions = $dictionary->getProfanityExpressions();
 
         // Sort by key length descending (longest profanity first)
@@ -39,10 +41,16 @@ class RegexDriver implements DriverInterface
         $normalizedString = $normalizer->normalize($text);
         $originalNormalized = preg_replace('/\s+/', ' ', $normalizedString);
 
+        // Immutable copy for position lookups — never mutated
+        $immutableNormalized = $originalNormalized;
+
         $matchedWords = [];
         $uniqueMap = [];
         $profanitiesCount = 0;
         $continue = true;
+
+        // Track masked character ranges so we don't re-match them
+        $maskedRanges = [];
 
         while ($continue) {
             $continue = false;
@@ -59,6 +67,19 @@ class RegexDriver implements DriverInterface
                         $length = mb_strlen($match[0], 'UTF-8');
                         $matchedText = $match[0];
 
+                        // Skip if this range overlaps with an already-masked range
+                        $matchEnd = $start + $length;
+                        $alreadyMasked = false;
+                        foreach ($maskedRanges as [$mStart, $mEnd]) {
+                            if ($start < $mEnd && $matchEnd > $mStart) {
+                                $alreadyMasked = true;
+                                break;
+                            }
+                        }
+                        if ($alreadyMasked) {
+                            continue;
+                        }
+
                         // Check word boundary spanning (filter uses byte-level operations)
                         if ($this->filter->isSpanningWordBoundary($matchedText, $normalizedString, $byteStart)) {
                             continue;
@@ -73,8 +94,8 @@ class RegexDriver implements DriverInterface
                         $fullWord = $this->filter->getFullWordContext($normalizedString, $byteStart, $byteLength);
 
                         // Check pure alpha substring against original (unmasked) normalized
-                        $originalFullWord = $this->filter->getFullWordContext($originalNormalized, $byteStart, $byteLength);
-                        if ($this->compoundDetector->isPureAlphaSubstring($matchedText, $originalFullWord, $profanity, $profanityExpressions)) {
+                        $originalFullWord = $this->filter->getFullWordContext($immutableNormalized, $byteStart, $byteLength);
+                        if (!$matchEmbedded && $this->compoundDetector->isPureAlphaSubstring($matchedText, $originalFullWord, $profanity, $profanityExpressions)) {
                             continue;
                         }
 
@@ -86,14 +107,22 @@ class RegexDriver implements DriverInterface
                         $continue = true;
 
                         // Mask in normalizedString only (needed for loop termination)
-                        $normalizedString = mb_substr($normalizedString, 0, $start) . str_repeat('*', mb_strlen($match[0], 'UTF-8')) .
-                            mb_substr($normalizedString, $start + mb_strlen($match[0], 'UTF-8'));
+                        // Use SOH control char internally to avoid re-matching when '*' is
+                        // a valid substitution character in profanity patterns
+                        $normalizedString = mb_substr($normalizedString, 0, $start) . str_repeat("\x01", $length) .
+                            mb_substr($normalizedString, $start + $length);
 
-                        // Track match
+                        // Record masked range using character positions from immutable string
+                        $maskedRanges[] = [$start, $matchEnd];
+
+                        // Track match — use position derived from immutable normalized string
                         $profanitiesCount++;
 
+                        // Get the original text at this position from the original input
+                        $originalMatchText = mb_substr($text, $start, $length);
+
                         $matchedWords[] = new MatchedWord(
-                            text: $matchedText,
+                            text: $originalMatchText,
                             base: $profanity,
                             severity: $dictionary->getSeverity($profanity),
                             position: $start,
@@ -109,7 +138,7 @@ class RegexDriver implements DriverInterface
             }
         }
 
-        // Apply severity filter if set
+        // Apply severity filter before masking so low-severity matches don't suppress overlapping ones
         $minimumSeverity = $options['severity'] ?? null;
         if ($minimumSeverity instanceof Severity) {
             $matchedWords = array_values(array_filter(

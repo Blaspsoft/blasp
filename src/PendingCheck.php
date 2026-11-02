@@ -27,6 +27,7 @@ class PendingCheck
     protected ?Severity $minimumSeverity = null;
     protected bool $strictMode = false;
     protected bool $lenientMode = false;
+    protected ?bool $matchEmbedded = null;
     protected ?array $pipelineDrivers = null;
 
     public function __construct(BlaspManager $manager)
@@ -95,6 +96,12 @@ class PendingCheck
     {
         $this->lenientMode = true;
         $this->strictMode = false;
+        return $this;
+    }
+
+    public function matchEmbedded(bool $enabled = true): self
+    {
+        $this->matchEmbedded = $enabled;
         return $this;
     }
 
@@ -199,6 +206,8 @@ class PendingCheck
             $options['severity'] = $this->minimumSeverity;
         }
 
+        $options['match_embedded'] = $this->shouldMatchEmbedded();
+
         $analyzer = new Analyzer();
         $result = $analyzer->analyze($text, $driver, $dictionary, $mask, $options);
 
@@ -292,6 +301,11 @@ class PendingCheck
         return true;
     }
 
+    protected function shouldMatchEmbedded(): bool
+    {
+        return $this->matchEmbedded ?? (bool) config('blasp.match_embedded', false);
+    }
+
     protected function buildCacheKey(string $text): string
     {
         $parts = [
@@ -305,6 +319,7 @@ class PendingCheck
             'severity' => $this->minimumSeverity?->value,
             'strict' => $this->strictMode,
             'lenient' => $this->lenientMode,
+            'match_embedded' => $this->shouldMatchEmbedded(),
             'mask' => $this->maskStrategy ? serialize($this->maskStrategy) : null,
         ];
 
@@ -323,6 +338,14 @@ class PendingCheck
         $cache = $this->getCache();
         $keys = $cache->get('blasp_result_cache_keys', []);
         $keys[] = $key;
-        $cache->forever('blasp_result_cache_keys', array_unique($keys));
+        $keys = array_unique($keys);
+
+        // Evict oldest keys when exceeding the configured limit
+        $maxKeys = config('blasp.cache.max_tracked_keys', 1000);
+        if (count($keys) > $maxKeys) {
+            $keys = array_slice($keys, -$maxKeys);
+        }
+
+        $cache->forever('blasp_result_cache_keys', $keys);
     }
 }
