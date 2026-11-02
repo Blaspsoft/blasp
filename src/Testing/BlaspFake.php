@@ -97,6 +97,11 @@ class BlaspFake
         return $this;
     }
 
+    public function dutch(): self
+    {
+        return $this;
+    }
+
     public function mask(string $mask): self
     {
         return $this;

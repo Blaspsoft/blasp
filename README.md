@@ -16,7 +16,7 @@ Blasp is a powerful, extensible profanity filter for Laravel. Version 4 is a gro
 ## Features
 
 - **Driver Architecture** — `regex` (detects obfuscation, substitutions, separators), `pattern` (fast exact matching), `phonetic` (catches sound-alike evasions), or `pipeline` (chains multiple drivers together). Extend with custom drivers.
-- **Multi-Language** — English, Spanish, German, French with language-specific normalizers. Check one, many, or all at once.
+- **Multi-Language** — English, Spanish, German, French, Dutch with language-specific normalizers. Check one, many, or all at once.
 - **Severity Scoring** — Words categorised as mild/moderate/high/extreme. Filter by minimum severity and get a 0-100 score.
 - **Masking Strategies** — Character mask (`*`, `#`), grawlix (`!@#$%`), or a custom callback.
 - **Eloquent Integration** — `Blaspable` trait auto-sanitizes or rejects profanity on model save.
@@ -80,6 +80,7 @@ Blasp::english()->check($text);
 Blasp::spanish()->check($text);
 Blasp::german()->check($text);
 Blasp::french()->check($text);
+Blasp::dutch()->check($text);
 
 // Driver selection
 Blasp::driver('regex')->check($text);     // Full obfuscation detection (default)

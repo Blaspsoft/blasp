@@ -122,6 +122,34 @@ class DutchLanguageDetectionTest extends TestCase
         $this->assertFalse($result->isOffensive());
     }
 
+    public function test_everyday_words_are_not_flagged()
+    {
+        $sentences = [
+            'Ik kon niet komen',
+            'Het fruit is rot',
+            'We gaan ballen op het plein',
+            'Tien aftrekken van twintig',
+            'Een zak chips',
+            'Mijn handen zijn vuil',
+            'De pest in de middeleeuwen',
+            'Een wild zwijn in het bos',
+            'De zakkenroller werd gearresteerd',
+        ];
+
+        foreach ($sentences as $sentence) {
+            $result = Blasp::dutch()->check($sentence);
+            $this->assertFalse($result->isOffensive(), "False positive in '$sentence'");
+        }
+    }
+
+    public function test_detects_slurs()
+    {
+        foreach (['nikker', 'spleetoog', 'moederneuker'] as $word) {
+            $result = Blasp::dutch()->check("jij bent een $word");
+            $this->assertTrue($result->isOffensive(), "Failed to detect '$word'");
+        }
+    }
+
     public function test_dutch_language_available()
     {
         $languages = \Blaspsoft\Blasp\Core\Dictionary::getAvailableLanguages();
