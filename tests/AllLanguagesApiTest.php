@@ -27,10 +27,10 @@ class AllLanguagesApiTest extends TestCase
 
     public function test_mixed_language_content()
     {
-        $result = Blasp::allLanguages()->check('This shit is mierda and scheiße');
+        $result = Blasp::allLanguages()->check('This shit is mierda, kut and scheiße');
         $this->assertTrue($result->hasProfanity());
-        $this->assertEquals('This **** is ****** and *******', $result->getCleanString());
-        $this->assertEquals(3, $result->getProfanitiesCount());
+        $this->assertEquals('This **** is ******, *** and *******', $result->getCleanString());
+        $this->assertEquals(4, $result->getProfanitiesCount());
     }
 
     public function test_chainable_all_languages()
@@ -41,17 +41,18 @@ class AllLanguagesApiTest extends TestCase
 
     public function test_language_shortcuts_vs_all()
     {
-        $text = 'fucking merde scheiße mierda';
+        $text = 'fucking merde scheiße mierda godverdomme';
 
         $englishResult = Blasp::english()->check($text);
         $this->assertEquals(1, $englishResult->getProfanitiesCount());
 
         $allResult = Blasp::allLanguages()->check($text);
-        $this->assertEquals(4, $allResult->getProfanitiesCount());
+        $this->assertEquals(5, $allResult->getProfanitiesCount());
 
         $this->assertStringNotContainsString('fucking', $allResult->getCleanString());
         $this->assertStringNotContainsString('merde', $allResult->getCleanString());
         $this->assertStringNotContainsString('scheiße', $allResult->getCleanString());
+        $this->assertStringNotContainsString('godverdomme', $allResult->getCleanString());
         $this->assertStringContainsString('*******', $allResult->getCleanString());
     }
 
