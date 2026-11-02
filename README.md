@@ -94,6 +94,7 @@ Blasp::pipeline('pattern', 'phonetic')->in('english')->mask('#')->check($text);
 // Shorthand modes
 Blasp::strict()->check($text);   // Forces regex driver
 Blasp::lenient()->check($text);  // Forces pattern driver
+Blasp::matchEmbedded()->check($text); // Also flag profanity embedded in longer words (regex driver)
 
 // Masking
 Blasp::mask('*')->check($text);        // Character mask (default)

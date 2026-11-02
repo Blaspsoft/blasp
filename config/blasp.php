@@ -52,6 +52,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Match Embedded Profanity
+    |--------------------------------------------------------------------------
+    |
+    | By default the regex driver skips a plain-letter match embedded inside
+    | a longer word ("ass" in "classroom"). Enable this to flag those too,
+    | e.g. for usernames, slugs or short codes with no spaces. False
+    | positives in the language files still apply.
+    |
+    */
+    'match_embedded' => env('BLASP_MATCH_EMBEDDED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Events
     |--------------------------------------------------------------------------
     |

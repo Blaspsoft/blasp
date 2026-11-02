@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Facade as BaseFacade;
  * @method static PendingCheck withSeverity(Severity $severity)
  * @method static PendingCheck strict()
  * @method static PendingCheck lenient()
+ * @method static PendingCheck matchEmbedded(bool $enabled = true)
  * @method static PendingCheck driver(string $driver)
  * @method static PendingCheck pipeline(string ...$drivers)
  * @method static PendingCheck english()

@@ -30,6 +30,8 @@ class RegexDriver implements DriverInterface
         $this->filter = new FalsePositiveFilter($dictionary->getFalsePositives());
         $this->compoundDetector = new CompoundWordDetector();
 
+        $matchEmbedded = (bool) ($options['match_embedded'] ?? false);
+
         $profanityExpressions = $dictionary->getProfanityExpressions();
 
         // Sort by key length descending (longest profanity first)
@@ -93,7 +95,7 @@ class RegexDriver implements DriverInterface
 
                         // Check pure alpha substring against original (unmasked) normalized
                         $originalFullWord = $this->filter->getFullWordContext($immutableNormalized, $byteStart, $byteLength);
-                        if ($this->compoundDetector->isPureAlphaSubstring($matchedText, $originalFullWord, $profanity, $profanityExpressions)) {
+                        if (!$matchEmbedded && $this->compoundDetector->isPureAlphaSubstring($matchedText, $originalFullWord, $profanity, $profanityExpressions)) {
                             continue;
                         }
 
