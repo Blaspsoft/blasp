@@ -49,6 +49,7 @@ return [
         'hoerenkind',
         'hoerenloper',
         'hoerenzoon',
+        'idioot',
         'imbeciel',
         'kanker',
         'kankerbak',
