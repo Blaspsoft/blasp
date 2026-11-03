@@ -89,7 +89,8 @@ class Dictionary
         $globalConfig = self::loadGlobalConfig();
 
         $profanities = $config['profanities'] ?? [];
-        $falsePositives = $config['false_positives'] ?? [];
+        // The global false_positives config (and configure()'s) apply to every language
+        $falsePositives = array_merge($config['false_positives'] ?? [], $options['false_positives'] ?? []);
         $severityMap = self::buildSeverityMap($config);
 
         $substitutions = $globalConfig['substitutions'] ?? [];
@@ -155,7 +156,7 @@ class Dictionary
 
         return new self(
             profanities: array_values(array_unique($allProfanities)),
-            falsePositives: array_values(array_unique($allFalsePositives)),
+            falsePositives: array_values(array_unique(array_merge($allFalsePositives, $options['false_positives'] ?? []))),
             separators: $globalConfig['separators'] ?? [],
             substitutions: $substitutions,
             severityMap: $allSeverityMap,
