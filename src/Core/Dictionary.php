@@ -41,14 +41,16 @@ class Dictionary
         string $language = 'english',
         ?array $profanityExpressions = null,
     ) {
-        $this->profanities = $profanities;
+        // A blank word compiles to an expression that matches the empty string, which made
+        // the regex driver loop forever (e.g. a block list from explode(',', env(...)))
+        $this->profanities = self::withoutBlankWords($profanities);
         $this->falsePositives = $falsePositives;
         $this->separators = $separators;
         $this->substitutions = $substitutions;
         $this->severityMap = $severityMap;
         $this->normalizer = $normalizer;
-        $this->allowList = array_map('strtolower', $allowList);
-        $this->blockList = array_map('strtolower', $blockList);
+        $this->allowList = array_map('strtolower', self::withoutBlankWords($allowList));
+        $this->blockList = array_map('strtolower', self::withoutBlankWords($blockList));
         $this->language = $language;
 
         // Apply block list — add extra words to profanities
@@ -180,6 +182,23 @@ class Dictionary
     public function getProfanities(): array
     {
         return $this->profanities;
+    }
+
+    /**
+     * @param  array<int, mixed>  $words
+     * @return array<int, string>
+     */
+    private static function withoutBlankWords(array $words): array
+    {
+        $kept = [];
+
+        foreach ($words as $word) {
+            if ((is_string($word) || is_int($word) || is_float($word)) && trim((string) $word) !== '') {
+                $kept[] = (string) $word;
+            }
+        }
+
+        return $kept;
     }
 
     public function getFalsePositives(): array

@@ -22,10 +22,16 @@ class Analyzer
     ): Result {
         $mask = $mask ?? new CharacterMask(config('blasp.mask', config('blasp.mask_character', '*')));
 
+        // Malformed UTF-8 is repaired once here, as the regex and pattern drivers already did,
+        // so every driver and the checks below see valid text. Otherwise one bad byte crashed
+        // the pipeline driver and made the /u checks below silently skip invisible characters.
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        }
+
         // Invisible Unicode format characters (zero-width spaces, invisible separators, etc.)
         // are removed before any driver sees the text, ensuring consistent positions across
-        // pipeline drivers, and long runs of one character are shortened. preg_match returns
-        // false on malformed UTF-8, which drivers handle.
+        // pipeline drivers, and long runs of one character are shortened.
         if (preg_match('/\p{Cf}|(.)\1{' . self::MAX_RUN . '}/u', $text) !== 1) {
             return $driver->detect($text, $dictionary, $mask, $options);
         }
