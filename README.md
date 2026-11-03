@@ -28,7 +28,7 @@ Blasp is a powerful, extensible profanity filter for Laravel. Version 4 is a gro
 ## Requirements
 
 - PHP 8.2+
-- Laravel 8.0+
+- Laravel 10, 11, 12 or 13
 
 ## Installation
 

@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Route;
 
 class MiddlewareBehaviourTest extends TestCase
 {
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The web group encrypts cookies; not every Laravel version's skeleton has a key
+        $app['config']->set('app.key', 'base64:' . base64_encode(str_repeat('k', 32)));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
