@@ -10,6 +10,7 @@ use Blaspsoft\Blasp\Core\Result;
 use Blaspsoft\Blasp\Core\Score;
 use Blaspsoft\Blasp\Core\Matchers\FalsePositiveFilter;
 use Blaspsoft\Blasp\Core\Matchers\CompoundWordDetector;
+use Blaspsoft\Blasp\Core\Matchers\SafeRegex;
 use Blaspsoft\Blasp\Core\Normalizers\OffsetMap;
 use Blaspsoft\Blasp\Enums\Severity;
 
@@ -64,10 +65,12 @@ class RegexDriver implements DriverInterface
             $normalizedString = preg_replace('/\s+/', ' ', $normalizedString);
 
             foreach ($profanityExpressions as $profanity => $expression) {
-                preg_match_all($expression, $normalizedString, $matches, PREG_OFFSET_CAPTURE);
+                // Bounded matching: a crafted input that exhausts the backtrack limit is
+                // rescanned in windows rather than treated as clean
+                $matches = SafeRegex::matchAll($expression, $normalizedString);
 
-                if (!empty($matches[0])) {
-                    foreach ($matches[0] as $match) {
+                if (!empty($matches)) {
+                    foreach ($matches as $match) {
                         $byteStart = $match[1];
                         $byteLength = strlen($match[0]);
                         $start = mb_strlen(substr($normalizedString, 0, $byteStart), 'UTF-8');
