@@ -104,7 +104,9 @@ class OffsetMap
         $chars = mb_str_split($chunk, 1, 'UTF-8');
         $count = count($chars);
 
-        if (mb_strlen($transform($chunk), 'UTF-8') === $count) {
+        // Only an unchanged chunk maps 1:1; a matching length alone can hide changes that
+        // cancel out (German ä → ae plus sch → sh)
+        if ($transform($chunk) === $chunk) {
             return range(1, $count);
         }
 

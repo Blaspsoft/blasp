@@ -4,6 +4,7 @@ namespace Blaspsoft\Blasp\Tests;
 
 use Blaspsoft\Blasp\Core\Normalizers\GermanNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\OffsetMap;
+use Blaspsoft\Blasp\Core\Normalizers\SpanishNormalizer;
 use Blaspsoft\Blasp\Facades\Blasp;
 
 class NormalizerOffsetTest extends TestCase
@@ -65,6 +66,22 @@ class NormalizerOffsetTest extends TestCase
 
         // "Arsh!" — the normalized "Arsh" covers all five original characters
         $this->assertSame([0, 5], $map->toOriginal(0, 4));
+    }
+
+    public function test_offset_map_handles_changes_that_cancel_out()
+    {
+        // ä → ae and sch → sh leave "äArsch" and "aeArsh" the same length
+        $map = OffsetMap::build('äArsch', fn (string $s) => (new GermanNormalizer())->normalize($s));
+
+        $this->assertSame([1, 5], $map->toOriginal(2, 4));
+    }
+
+    public function test_offset_map_covers_context_dependent_rewrite()
+    {
+        // Spanish ll → y only before a vowel, so "ya" must map back to "lla"
+        $map = OffsetMap::build('llama', fn (string $s) => (new SpanishNormalizer())->normalize($s));
+
+        $this->assertSame([0, 3], $map->toOriginal(0, 2));
     }
 
     public function test_offset_map_covers_expanded_umlaut()
