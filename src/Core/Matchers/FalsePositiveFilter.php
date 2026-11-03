@@ -16,24 +16,51 @@ class FalsePositiveFilter
         return isset($this->falsePositivesMap[strtolower($word)]);
     }
 
+    // The last hex token seen, when it consisted only of hex digits and dashes. Every match
+    // inside such a run sees the same token, so the answer is reused instead of rescanning
+    // the run for each candidate (quadratic on a long hash-like token).
+    private ?string $hexString = null;
+    private int $hexLeft = -1;
+    private int $hexRight = -1;
+    private bool $hexResult = false;
+
     public function isInsideHexToken(string $string, int $start, int $length): bool
     {
         $end = $start + $length;
+
+        if ($start >= $this->hexLeft && $end <= $this->hexRight && $string === $this->hexString) {
+            return $this->hexResult;
+        }
+
         $strLen = strlen($string);
 
         $tokenStart = $start;
-        while ($tokenStart > 0 && preg_match('/[0-9a-fA-F\-]/', $string[$tokenStart - 1])) {
+        while ($tokenStart > 0 && self::isHexOrDash($string[$tokenStart - 1])) {
             $tokenStart--;
         }
 
-        $tokenEnd = $end;
-        while ($tokenEnd < $strLen && preg_match('/[0-9a-fA-F\-]/', $string[$tokenEnd])) {
-            $tokenEnd++;
+        $tokenEnd = $end + strspn($string, '0123456789abcdefABCDEF-', min($end, $strLen));
+
+        $rawToken = substr($string, $tokenStart, $tokenEnd - $tokenStart);
+        $result = self::isHexToken(trim($rawToken, '-'));
+
+        if (strspn($rawToken, '0123456789abcdefABCDEF-') === strlen($rawToken)) {
+            $this->hexString = $string;
+            $this->hexLeft = $tokenStart;
+            $this->hexRight = $tokenEnd;
+            $this->hexResult = $result;
         }
 
-        $token = substr($string, $tokenStart, $tokenEnd - $tokenStart);
-        $token = trim($token, '-');
+        return $result;
+    }
 
+    private static function isHexOrDash(string $char): bool
+    {
+        return $char === '-' || ctype_xdigit($char);
+    }
+
+    private static function isHexToken(string $token): bool
+    {
         if (preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/', $token)) {
             return true;
         }

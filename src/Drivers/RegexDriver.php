@@ -6,6 +6,7 @@ use Blaspsoft\Blasp\Core\Contracts\DriverInterface;
 use Blaspsoft\Blasp\Core\Contracts\MaskStrategyInterface;
 use Blaspsoft\Blasp\Core\Dictionary;
 use Blaspsoft\Blasp\Core\MatchedWord;
+use Blaspsoft\Blasp\Core\Masking\TextMasker;
 use Blaspsoft\Blasp\Core\Result;
 use Blaspsoft\Blasp\Core\Score;
 use Blaspsoft\Blasp\Core\Matchers\FalsePositiveFilter;
@@ -67,8 +68,8 @@ class RegexDriver implements DriverInterface
         $profanitiesCount = 0;
         $continue = true;
 
-        // Track masked character ranges so we don't re-match them
-        $maskedRanges = [];
+        // Track masked characters so we don't re-match them
+        $maskedChars = [];
 
         while ($continue) {
             $continue = false;
@@ -90,8 +91,8 @@ class RegexDriver implements DriverInterface
                         // Skip if this range overlaps with an already-masked range
                         $matchEnd = $start + $length;
                         $alreadyMasked = false;
-                        foreach ($maskedRanges as [$mStart, $mEnd]) {
-                            if ($start < $mEnd && $matchEnd > $mStart) {
+                        for ($i = $start; $i < $matchEnd; $i++) {
+                            if (isset($maskedChars[$i])) {
                                 $alreadyMasked = true;
                                 break;
                             }
@@ -132,8 +133,10 @@ class RegexDriver implements DriverInterface
                         // so the offsets of later matches in this batch stay valid ("fück fück").
                         $normalizedString = substr_replace($normalizedString, str_repeat("\x01", $byteLength), $byteStart, $byteLength);
 
-                        // Record masked range using character positions from immutable string
-                        $maskedRanges[] = [$start, $matchEnd];
+                        // Record masked characters using positions from immutable string
+                        for ($i = $start; $i < $matchEnd; $i++) {
+                            $maskedChars[$i] = true;
+                        }
 
                         // Track match — use position derived from immutable normalized string
                         $profanitiesCount++;
@@ -168,16 +171,15 @@ class RegexDriver implements DriverInterface
             ));
         }
 
-        // Rebuild cleanText from surviving matches (right-to-left)
-        $workingCleanString = $text;
+        // Rebuild cleanText from surviving matches. Masks are generated right-to-left, as
+        // before, so a callback mask sees the same order; the text is rebuilt in one pass.
         $sorted = $matchedWords;
         usort($sorted, fn($a, $b) => $b->position - $a->position);
+        $replacements = [];
         foreach ($sorted as $word) {
-            $replacement = $mask->mask($word->text, $word->length);
-            $workingCleanString = mb_substr($workingCleanString, 0, $word->position)
-                . $replacement
-                . mb_substr($workingCleanString, $word->position + $word->length);
+            $replacements[] = [$word->position, $word->length, $mask->mask($word->text, $word->length)];
         }
+        $workingCleanString = TextMasker::apply($text, $replacements);
 
         $totalWords = max(1, count(preg_split('/\s+/u', trim($text), -1, PREG_SPLIT_NO_EMPTY)));
         $scoreValue = Score::calculate($matchedWords, $totalWords);

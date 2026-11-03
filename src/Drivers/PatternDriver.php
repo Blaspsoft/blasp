@@ -6,6 +6,7 @@ use Blaspsoft\Blasp\Core\Contracts\DriverInterface;
 use Blaspsoft\Blasp\Core\Contracts\MaskStrategyInterface;
 use Blaspsoft\Blasp\Core\Dictionary;
 use Blaspsoft\Blasp\Core\MatchedWord;
+use Blaspsoft\Blasp\Core\Masking\TextMasker;
 use Blaspsoft\Blasp\Core\Result;
 use Blaspsoft\Blasp\Core\Score;
 use Blaspsoft\Blasp\Enums\Severity;
@@ -79,16 +80,15 @@ class PatternDriver implements DriverInterface
         }
         $matchedWords = $deduplicated;
 
-        // Rebuild cleanText from surviving matches (right-to-left)
-        $cleanText = $text;
+        // Rebuild cleanText from surviving matches. Masks are generated right-to-left, as
+        // before, so a callback mask sees the same order; the text is rebuilt in one pass.
         $sorted = $matchedWords;
         usort($sorted, fn($a, $b) => $b->position - $a->position);
+        $replacements = [];
         foreach ($sorted as $word) {
-            $replacement = $mask->mask($word->text, $word->length);
-            $cleanText = mb_substr($cleanText, 0, $word->position)
-                . $replacement
-                . mb_substr($cleanText, $word->position + $word->length);
+            $replacements[] = [$word->position, $word->length, $mask->mask($word->text, $word->length)];
         }
+        $cleanText = TextMasker::apply($text, $replacements);
 
         $totalWords = max(1, count(preg_split('/\s+/u', trim($text), -1, PREG_SPLIT_NO_EMPTY)));
         $scoreValue = Score::calculate($matchedWords, $totalWords);

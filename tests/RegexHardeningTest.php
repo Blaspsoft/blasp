@@ -28,6 +28,8 @@ class RegexHardeningTest extends TestCase
             'run of a letter substitute' => [str_repeat('!', 10000) . ' you lickme'],
             'alternating letter and wildcard' => [str_repeat('o*', 2500)],
             'alternating letter and wildcard 2' => [str_repeat('a*', 2500)],
+            'dense profanity' => [str_repeat('fuck ', 6400)],
+            'long hex-like token' => [str_repeat('a55a5ef1', 4000)],
         ];
     }
 
@@ -40,6 +42,18 @@ class RegexHardeningTest extends TestCase
         Blasp::check($text);
         $elapsed = microtime(true) - $start;
 
+        $this->assertLessThan(3.0, $elapsed, sprintf('Check took %.2fs', $elapsed));
+    }
+
+    public function test_dense_profanity_through_pipeline_is_checked_quickly()
+    {
+        Blasp::check('warm up');
+
+        $start = microtime(true);
+        $result = Blasp::driver('pipeline')->check(str_repeat('fuck ', 6400));
+        $elapsed = microtime(true) - $start;
+
+        $this->assertSame(6400, $result->count());
         $this->assertLessThan(3.0, $elapsed, sprintf('Check took %.2fs', $elapsed));
     }
 

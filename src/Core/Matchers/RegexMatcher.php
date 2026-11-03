@@ -14,8 +14,21 @@ class RegexMatcher
     // letters still match.
     public const MAX_LETTER_REPEAT = 8;
 
+    // Built expressions for recent word lists. Building them for every check was about 90%
+    // of the cost of checking a short text (~14 ms for English, ~74 ms for all languages).
+    private const EXPRESSION_CACHE_SIZE = 16;
+
+    /** @var array<string, array<string, string>> */
+    private static array $expressionCache = [];
+
     public function generateExpressions(array $profanities, array $separators, array $substitutions): array
     {
+        $key = hash('xxh128', serialize([$profanities, $separators, $substitutions]));
+
+        if (isset(self::$expressionCache[$key])) {
+            return self::$expressionCache[$key];
+        }
+
         $units = $this->generateSubstitutionUnits($substitutions);
 
         $profanityExpressions = [];
@@ -24,7 +37,13 @@ class RegexMatcher
             $profanityExpressions[$profanity] = $this->buildProfanityExpression($profanity, $units, $separators);
         }
 
-        return $profanityExpressions;
+        // Bounded so a long-running worker (Octane, queues) with many allow/block list
+        // combinations does not grow without limit
+        if (count(self::$expressionCache) >= self::EXPRESSION_CACHE_SIZE) {
+            array_shift(self::$expressionCache);
+        }
+
+        return self::$expressionCache[$key] = $profanityExpressions;
     }
 
     public function generateSeparatorExpression(array $separators, bool $allowDot = true): string

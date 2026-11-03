@@ -5,6 +5,7 @@ namespace Blaspsoft\Blasp\Core;
 use Blaspsoft\Blasp\Core\Contracts\DriverInterface;
 use Blaspsoft\Blasp\Core\Contracts\MaskStrategyInterface;
 use Blaspsoft\Blasp\Core\Masking\CharacterMask;
+use Blaspsoft\Blasp\Core\Masking\TextMasker;
 
 class Analyzer
 {
@@ -104,17 +105,10 @@ class Analyzer
 
             // Mask the original span minus its format characters
             $visible = preg_replace('/\p{Cf}/u', '', $original) ?? $original;
-            $replacements[] = [$start, $end, $mask->mask($visible, mb_strlen($visible, 'UTF-8'))];
+            $replacements[] = [$start, $end - $start, $mask->mask($visible, mb_strlen($visible, 'UTF-8'))];
         }
 
-        // Mask right-to-left so earlier positions stay valid
-        usort($replacements, fn ($a, $b) => $b[0] - $a[0]);
-        $cleanText = $text;
-        foreach ($replacements as [$start, $end, $replacement]) {
-            $cleanText = mb_substr($cleanText, 0, $start, 'UTF-8')
-                . $replacement
-                . mb_substr($cleanText, $end, null, 'UTF-8');
-        }
+        $cleanText = TextMasker::apply($text, $replacements);
 
         return new Result($text, $cleanText, $matchedWords, $result->score());
     }
