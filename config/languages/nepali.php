@@ -22,27 +22,30 @@
 | common transliteration swaps u/oo, i/ee, v/w, z/j and f/ph.
 |
 | Deliberately omitted: ethnic slurs that double as legitimate community
-| names, and "chakka" (also a cricket six). Add them via `block()` if needed.
+| names, "chakka" (also a cricket six), bare animal nouns (only insults built
+| on them are listed), the identity term "hijra", and romanized words that
+| collide with other languages ("lute", "paji"). Add them via `block()` if
+| needed.
 |
 */
 
 $severity = [
     'mild' => [
         // Devanagari
-        'साला', 'साली', 'गधा', 'गधे', 'मूर्ख', 'बेकुफ', 'बेवकुफ',
-        'पाजी', 'गोरु', 'फटाहा', 'लुते', 'साले',
+        'साला', 'साली', 'मूर्ख', 'बेकुफ', 'बेवकुफ',
+        'पाजी', 'फटाहा', 'लुते', 'साले',
         // Romanized
-        'saala', 'saali', 'saale', 'gadha', 'gadhe', 'murkha', 'bekuf', 'bewakuf',
-        'paji', 'goru', 'fataha', 'lute', 'lutte',
+        'saala', 'saali', 'saale', 'murkha', 'bekuf', 'bewakuf',
+        'fataha',
     ],
     'moderate' => [
         // Devanagari
-        'कुकुर', 'कुकुरनी', 'कुकुरको छोरो', 'कुकुरको छोरी', 'कुत्ता', 'कुत्ती',
-        'सुंगुर', 'बोका', 'बोक्सी', 'भालु', 'गु खा', 'गु खाने',
+        'कुकुरनी', 'कुकुरको छोरो', 'कुकुरको छोरी',
+        'बोक्सी', 'गु खा', 'गु खाने',
         'हरामी', 'कमिना', 'कमीना',
         // Romanized
-        'kukur', 'kukurni', 'kukurko choro', 'kukur ko choro', 'kukurko chori', 'kukur ko chori',
-        'kutta', 'kutti', 'sungur', 'boka', 'boksi', 'bhalu', 'gu kha', 'gu khane',
+        'kukurni', 'kukurko choro', 'kukur ko choro', 'kukurko chori', 'kukur ko chori',
+        'boksi', 'gu kha', 'gu khane',
         'harami', 'kamina', 'kameena',
     ],
     'high' => [
@@ -72,12 +75,6 @@ $severity = [
         'beshya', 'besya',
         'madarchod', 'maderchod', 'chutiya', 'behenchod', 'bahenchod',
     ],
-    'extreme' => [
-        // Devanagari
-        'हिजडा', 'हिजडे',
-        // Romanized
-        'hijada', 'hijda', 'hijade', 'hijde',
-    ],
 ];
 
 return [
@@ -87,7 +84,6 @@ return [
 
     'false_positives' => [
         // Legitimate words containing a listed word as a substring
-        'बोकाउनु', 'बोकाउने', 'बोकाएर', 'बोकाएको', 'बोकाइ', 'बोकाउँछ', 'बोकाउंछ', // contain बोका
         'मसाला', 'मसाले',             // contain साला
         'गांडीव',                     // Gandiva (contains गांड)
         'लंडन',                       // London

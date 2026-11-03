@@ -24,9 +24,9 @@ class NepaliProfanityTest extends TestCase
             'माछिक्ने' => 'माछिक्ने मान्छे',
             'रण्डी' => 'त्यो रण्डी',
             'पुती' => 'तेरो पुती',
-            'कुकुर' => 'कुकुर जस्तो',
+            'कुकुरको छोरो' => 'त कुकुरको छोरो',
             'गांड' => 'तेरो गांड',
-            'बोका' => 'यो बोका',
+            'बोक्सी' => 'यो बोक्सी',
         ];
 
         foreach ($cases as $word => $text) {
@@ -44,7 +44,7 @@ class NepaliProfanityTest extends TestCase
             'machikne' => 'machikne manche',
             'randi' => 'tyo randi',
             'puti' => 'tero puti',
-            'kukur' => 'kukur jasto',
+            'kukurni' => 'kukurni jasto',
             'lado' => 'mero lado',
             'chikne' => 'ama chikne',
         ];
@@ -112,11 +112,10 @@ class NepaliProfanityTest extends TestCase
     public function test_severity_levels()
     {
         $this->assertSame(Severity::Mild, Blasp::nepali()->check('साला')->severity());
-        $this->assertSame(Severity::Moderate, Blasp::nepali()->check('kukur')->severity());
+        $this->assertSame(Severity::Moderate, Blasp::nepali()->check('kukurni')->severity());
         $this->assertSame(Severity::High, Blasp::nepali()->check('muji')->severity());
-        $this->assertSame(Severity::Extreme, Blasp::nepali()->check('hijada')->severity());
 
-        $this->assertFalse(Blasp::nepali()->withSeverity(Severity::High)->check('ta gadha')->isOffensive());
+        $this->assertFalse(Blasp::nepali()->withSeverity(Severity::High)->check('ta saala')->isOffensive());
         $this->assertTrue(Blasp::nepali()->withSeverity(Severity::High)->check('ta muji')->isOffensive());
     }
 

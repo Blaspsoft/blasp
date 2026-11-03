@@ -182,7 +182,7 @@ Both languages ship with Devanagari *and* romanized (Latin-script) word lists, s
 | Romanized vowels | `chootiya`, `chuteeya`, `mooji` | `chutiya`, `muji` |
 | Romanized consonants | `bhadva`/`bhadwa`, `haramjada`, `phuddu` | `bhadwa`, `haramzada`, `fuddu` |
 
-A few words are intentionally left out because they collide with everyday words (`chakka` is also a cricket six, caste/ethnic terms double as community names). Add them per-project with `Blasp::block(...)` or the `block` config key.
+Some words are intentionally left out because they are everyday vocabulary or collide with other languages under `allLanguages()`: bare animal nouns (`kutta`, `kukur`, `gadha`, `ullu`…; only insults built on them such as `kutte ki aulad` are listed), news vocabulary (`balatkar`), identity terms (`hijra`, caste and ethnic community names), `chakka` (also a cricket six), and romanized words such as `lund`, `gand`, `lute` and `paji`. Add them per-project with `Blasp::block(...)` or the `block` config key.
 
 ### Pipeline Driver
 

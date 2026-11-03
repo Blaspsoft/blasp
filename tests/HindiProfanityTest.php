@@ -27,7 +27,7 @@ class HindiProfanityTest extends TestCase
             'गांड' => 'तेरी गांड',
             'रंडी' => 'वो रंडी है',
             'हरामी' => 'बहुत हरामी आदमी है',
-            'कुत्ता' => 'कुत्ता कहीं का',
+            'कुतिया' => 'साली कुतिया',
         ];
 
         foreach ($cases as $word => $text) {
@@ -45,7 +45,7 @@ class HindiProfanityTest extends TestCase
             'madarchod' => 'saale madarchod',
             'bhosdike' => 'abe bhosdike',
             'gaand' => 'teri gaand',
-            'lund' => 'mera lund',
+            'lauda' => 'mera lauda',
             'randi' => 'wo randi hai',
             'harami' => 'bahut harami aadmi hai',
             'bsdk' => 'chal bsdk',
@@ -137,7 +137,7 @@ class HindiProfanityTest extends TestCase
         $this->assertSame(Severity::Mild, Blasp::hindi()->check('साला')->severity());
         $this->assertSame(Severity::Moderate, Blasp::hindi()->check('harami')->severity());
         $this->assertSame(Severity::High, Blasp::hindi()->check('madarchod')->severity());
-        $this->assertSame(Severity::Extreme, Blasp::hindi()->check('हिजडा')->severity());
+        $this->assertSame(Severity::Extreme, Blasp::hindi()->check('चिंकी')->severity());
 
         $this->assertFalse(Blasp::hindi()->withSeverity(Severity::High)->check('tu saala')->isOffensive());
         $this->assertTrue(Blasp::hindi()->withSeverity(Severity::High)->check('tu chutiya')->isOffensive());

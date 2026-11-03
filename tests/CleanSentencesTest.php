@@ -33,7 +33,20 @@ class CleanSentencesTest extends TestCase
             ['spanish', 'El perro come en el jardín.'],
             ['spanish', 'Mi familia vive en Madrid.'],
             ['english', 'The hijacking was reported on the evening news.'],
+            ['hindi', 'मेरे घर में एक कुत्ता और एक बिल्ली है।'],
+            ['hindi', 'खेत में गधा और सुअर थे, और उल्लू रात में जागता है।'],
+            ['hindi', 'बलात्कार के आरोपी को अदालत ने सजा सुनाई।'],
+            ['hindi', 'लंडन में मसाला चाय बहुत महंगी है।'],
+            ['hindi', 'mere ghar mein ek kutta hai aur khet mein gadha bhi.'],
+            ['hindi', 'ullu raat mein jagta hai aur suar khet mein hai.'],
+            ['nepali', 'हाम्रो घरमा एउटा कुकुर र एउटा बोका छ।'],
+            ['nepali', 'गोरु र सुंगुर खेतमा छन्, जंगलमा भालु देखियो।'],
+            ['nepali', 'hamro ghar ma kukur ra boka cha.'],
+            ['nepali', 'goru ra sungur khet ma chan, jungle ma bhalu dekhiyo.'],
             ['all', 'Please check the information on this page and send an email.'],
+            ['all', 'He played the lute in Ghent, which is Gand in French, and later moved to Lund.'],
+            ['all', 'Il lutte contre la maladie.'],
+            ['all', 'Paji, see you at the wedding!'],
         ];
     }
 
@@ -52,6 +65,8 @@ class CleanSentencesTest extends TestCase
             ['french', 'putain de merde'], ['french', 'va te faire foutre, connard'], ['french', 'fils de pute'],
             ['french', 'espèce de salope'], ['french', 'quel con'], ['french', 'petite bite'],
             ['german', 'du Arschloch'], ['spanish', 'hijo de puta'],
+            ['hindi', 'tu kutte ki aulad hai'], ['hindi', 'ullu ka pattha'], ['hindi', 'तू चूतिया है'],
+            ['nepali', 'kukur ko choro'], ['nepali', 'त कुकुरको छोरो'],
         ];
     }
 

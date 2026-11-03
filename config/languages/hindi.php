@@ -21,35 +21,38 @@
 | engine (gaand/gand, saala/sala), and the substitutions below add the common
 | transliteration swaps u/oo, i/ee, v/w, z/j and f/ph.
 |
-| Deliberately omitted: caste-based slurs (legitimate community names) and
-| "chakka" (also means a cricket six). Add them via `block()` if needed.
+| Deliberately omitted: caste-based slurs (legitimate community names),
+| "chakka" (also means a cricket six), bare animal nouns (only insults built
+| on them are listed), news vocabulary ("balatkar"), the identity term
+| "hijra", and romanized words that collide with other languages ("lund",
+| "gand"). Add them via `block()` if needed.
 |
 */
 
 $severity = [
     'mild' => [
         // Devanagari
-        'साला', 'साली', 'सालो', 'गधा', 'गधे', 'गधी',
-        'उल्लू', 'उल्लू का पट्ठा', 'उल्लू के पट्ठे',
-        'बेवकूफ', 'बेवकूफी', 'सुअर', 'टट्टी', 'पादना', 'मूतना',
+        'साला', 'साली', 'सालो',
+        'उल्लू का पट्ठा', 'उल्लू के पट्ठे',
+        'बेवकूफ', 'बेवकूफी', 'टट्टी', 'पादना', 'मूतना',
         'चूतड', 'नालायक', 'लफंगा', 'बदतमीज',
         // Romanized
-        'saala', 'saale', 'saali', 'gadha', 'gadhe', 'gadhi',
-        'ullu', 'ullu ka pattha', 'ullu ke patthe',
-        'bewakoof', 'bevkoof', 'bewkoof', 'bewakoofi', 'suar', 'suwar',
+        'saala', 'saale', 'saali',
+        'ullu ka pattha', 'ullu ke patthe',
+        'bewakoof', 'bevkoof', 'bewkoof', 'bewakoofi',
         'tatti', 'paadna', 'chutad', 'nalayak', 'lafanga', 'badtameez',
     ],
     'moderate' => [
         // Devanagari
         'हरामी', 'हरामखोर', 'कमीना', 'कमीने', 'कमीनी',
-        'कुत्ता', 'कुत्ते', 'कुत्ती', 'कुतिया', 'कुत्ते की औलाद', 'कुत्ते का पिल्ला',
+        'कुतिया', 'कुत्ते की औलाद', 'कुत्ते का पिल्ला',
         'बकचोद', 'बकचोदी', 'नामर्द', 'चूची', 'चूचे',
         'मुठ', 'मुठ मारना', 'मुठ मार', 'लोडू', 'फुद्दू', 'टट्टे',
         'झाटू', 'झांटू', 'छपरी',
         'हवस', 'हवस के पुजारी', 'थरक', 'थरकी', 'भूतनी के', 'बूबे',
         // Romanized
         'harami', 'haramkhor', 'kamina', 'kameena', 'kamine', 'kameene', 'kamini', 'kameeni',
-        'kutta', 'kutte', 'kutti', 'kutiya', 'kuttiya', 'kutte ki aulad', 'kutte ka pilla',
+        'kutiya', 'kuttiya', 'kutte ki aulad', 'kutte ka pilla',
         'bakchod', 'bakchodi', 'namard', 'chuchi', 'chuche',
         'muth', 'muth marna', 'muth maar', 'lodu', 'fuddu', 'tatte',
         'jhatu', 'jhantu', 'chapri',
@@ -69,7 +72,7 @@ $severity = [
         'हरामजादा', 'हरामजादे', 'हरामजादी',
         'तेरी मां की चूत', 'मां की चूत', 'मां का भोसडा', 'तेरी मां का भोसडा',
         'मादरचोद', 'मादरजात', 'बहनचोद', 'बहन के लौडे', 'बहन के लोडे', 'बेटीचोद',
-        'आंड', 'आंडू', 'बलात्कार', 'बलात्कारी', 'भंडवे',
+        'आंड', 'आंडू', 'भंडवे',
         'चुदाप', 'चुदाई खाना', 'चुदम चुदाई', 'चुदे', 'चुतन', 'चूपे',
         'गंडफट्टू', 'गश्ती', 'गस्ती', 'घस्सा', 'घस्ती', 'गुच्ची', 'गुच्चू',
         'लंडटोपी', 'लंडूरे', 'माधवचोद', 'मुंह में ले', 'रंडाप',
@@ -79,8 +82,8 @@ $severity = [
         'chutiya', 'chutiye', 'chutiyo', 'chutia', 'chutiyapa', 'chutiyapanti',
         'chut', 'chut ke dhakkan', 'chutmarike', 'chut marike',
         'chod', 'chodu', 'chodna', 'choda', 'chodi', 'chodne',
-        'lund', 'lauda', 'laude', 'laudu', 'lawda', 'lawde', 'loda', 'lavda', 'lavde',
-        'gaand', 'gand', 'gandu', 'gaandu', 'gaand mara', 'gand mara', 'gaand marna', 'gaand faad',
+        'lauda', 'laude', 'laudu', 'lawda', 'lawde', 'loda', 'lavda', 'lavde',
+        'gaand', 'gandu', 'gaandu', 'gaand mara', 'gand mara', 'gaand marna', 'gaand faad',
         'bhosda', 'bhosdi', 'bhosdike', 'bhosdi ke', 'bhosdiki', 'bhosdiwala', 'bhosdiwale',
         'bhosadike', 'bhosad', 'bsdk', 'bkl',
         'bhadwa', 'bhadwe', 'bhadva', 'bharwa', 'bhadua',
@@ -91,7 +94,7 @@ $severity = [
         'madarchod', 'maderchod', 'madarchodh', 'motherchod', 'madarjaat',
         'behenchod', 'bhenchod', 'behnchod', 'bahenchod', 'bahinchod', 'benchod',
         'bhen ke laude', 'behen ke laude', 'bhen ke lode', 'behen ke lode', 'betichod',
-        'aand', 'aandu', 'balatkar', 'balatkari', 'bhandve',
+        'aand', 'aandu', 'bhandve',
         'chudaap', 'chudai khanaa', 'chudam chudai', 'chude', 'chutan', 'choope',
         'gandfattu', 'gashti', 'gasti', 'ghassa', 'ghasti', 'gucchi', 'gucchu',
         'lundtopi', 'lundure', 'madhavchod', 'mooh mein le', 'randaap',
@@ -100,9 +103,9 @@ $severity = [
     ],
     'extreme' => [
         // Devanagari
-        'हिजडा', 'हिजडे', 'हिजरा', 'कटुआ', 'चिंकी',
+        'कटुआ', 'चिंकी',
         // Romanized
-        'hijda', 'hijde', 'hijra', 'katua', 'chinki', 'paki',
+        'katua', 'chinki', 'paki',
     ],
 ];
 
