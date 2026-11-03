@@ -60,7 +60,7 @@ class FalsePositiveFilter
 
         $singleCharCount = 0;
         foreach ($parts as $part) {
-            if (mb_strlen($part, 'UTF-8') === 1 && preg_match('/[a-z]/iu', $part)) {
+            if (mb_strlen($part, 'UTF-8') === 1 && preg_match('/\p{L}/u', $part)) {
                 $singleCharCount++;
             }
         }
@@ -97,8 +97,9 @@ class FalsePositiveFilter
             $standaloneParts = array_slice($parts, 1);
             $standalonePortion = implode(' ', $standaloneParts);
 
-            $hasLetter = preg_match('/[a-z]/iu', $standalonePortion);
-            $hasNonLetter = preg_match('/[^a-z\s]/iu', $standalonePortion);
+            // Accented letters are letters, not obfuscation ("fück a" is two words)
+            $hasLetter = preg_match('/\p{L}/u', $standalonePortion);
+            $hasNonLetter = preg_match('/[^\p{L}\p{M}\s]/u', $standalonePortion);
 
             if ($hasLetter && $hasNonLetter) {
                 return false;
@@ -110,8 +111,9 @@ class FalsePositiveFilter
             $standaloneParts = array_slice($parts, 0, -1);
             $standalonePortion = implode(' ', $standaloneParts);
 
-            $hasLetter = preg_match('/[a-z]/iu', $standalonePortion);
-            $hasNonLetter = preg_match('/[^a-z\s]/iu', $standalonePortion);
+            // Accented letters are letters, not obfuscation ("fück a" is two words)
+            $hasLetter = preg_match('/\p{L}/u', $standalonePortion);
+            $hasNonLetter = preg_match('/[^\p{L}\p{M}\s]/u', $standalonePortion);
 
             if ($hasLetter && $hasNonLetter) {
                 return false;

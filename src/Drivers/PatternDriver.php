@@ -23,7 +23,6 @@ class PatternDriver implements DriverInterface
         }
 
         $matchedWords = [];
-        $lowerText = mb_strtolower($text, 'UTF-8');
         $profanities = $dictionary->getProfanities();
         $falsePositives = array_map(fn($fp) => mb_strtolower($fp, 'UTF-8'), $dictionary->getFalsePositives());
 
@@ -34,9 +33,11 @@ class PatternDriver implements DriverInterface
             $lowerProfanity = mb_strtolower($profanity, 'UTF-8');
             $pattern = '/\b' . preg_quote($lowerProfanity, '/') . '\b/iu';
 
-            if (preg_match_all($pattern, $lowerText, $matches, PREG_OFFSET_CAPTURE)) {
+            // Match the original text case-insensitively: lowercasing can change its length
+            // ("İ" becomes two characters), which shifted every later match position
+            if (preg_match_all($pattern, $text, $matches, PREG_OFFSET_CAPTURE)) {
                 foreach ($matches[0] as $match) {
-                    $start = mb_strlen(substr($lowerText, 0, $match[1]), 'UTF-8');
+                    $start = mb_strlen(substr($text, 0, $match[1]), 'UTF-8');
                     $length = mb_strlen($match[0], 'UTF-8');
                     $originalMatch = mb_substr($text, $start, $length);
 

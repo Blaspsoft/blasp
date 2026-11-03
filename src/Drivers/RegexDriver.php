@@ -49,6 +49,16 @@ class RegexDriver implements DriverInterface
         // Immutable copy for position lookups — never mutated
         $immutableNormalized = $originalNormalized;
 
+        // Character index of each character's first byte. Masking keeps byte offsets
+        // stable, so match offsets map straight to character positions.
+        $charIndexAtByte = [];
+        $byteOffset = 0;
+        foreach (mb_str_split($immutableNormalized, 1, 'UTF-8') as $index => $char) {
+            $charIndexAtByte[$byteOffset] = $index;
+            $byteOffset += strlen($char);
+        }
+        $charIndexAtByte[$byteOffset] = count($charIndexAtByte);
+
         // Normalizing can change the length of the text, so match positions are mapped back
         $offsetMap = OffsetMap::build($text, fn (string $s) => preg_replace('/\s+/', ' ', $normalizer->normalize($s)));
 
@@ -73,8 +83,8 @@ class RegexDriver implements DriverInterface
                     foreach ($matches as $match) {
                         $byteStart = $match[1];
                         $byteLength = strlen($match[0]);
-                        $start = mb_strlen(substr($normalizedString, 0, $byteStart), 'UTF-8');
-                        $length = mb_strlen($match[0], 'UTF-8');
+                        $start = $charIndexAtByte[$byteStart];
+                        $length = $charIndexAtByte[$byteStart + $byteLength] - $start;
                         $matchedText = $match[0];
 
                         // Skip if this range overlaps with an already-masked range
@@ -118,9 +128,9 @@ class RegexDriver implements DriverInterface
 
                         // Mask in normalizedString only (needed for loop termination)
                         // Use SOH control char internally to avoid re-matching when '*' is
-                        // a valid substitution character in profanity patterns
-                        $normalizedString = mb_substr($normalizedString, 0, $start) . str_repeat("\x01", $length) .
-                            mb_substr($normalizedString, $start + $length);
+                        // a valid substitution character in profanity patterns. One per byte,
+                        // so the offsets of later matches in this batch stay valid ("fück fück").
+                        $normalizedString = substr_replace($normalizedString, str_repeat("\x01", $byteLength), $byteStart, $byteLength);
 
                         // Record masked range using character positions from immutable string
                         $maskedRanges[] = [$start, $matchEnd];
