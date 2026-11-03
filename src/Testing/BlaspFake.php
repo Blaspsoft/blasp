@@ -102,7 +102,7 @@ class BlaspFake
         return $this;
     }
 
-    public function mask(string $mask): self
+    public function mask(string|\Closure $mask): self
     {
         return $this;
     }

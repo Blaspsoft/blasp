@@ -271,6 +271,10 @@ class PendingCheck
 
         $driverName = $this->driverName ?? $this->manager->getDefaultDriver();
 
+        if ($this->strictMode) {
+            $driverName = 'regex';
+        }
+
         if ($this->lenientMode) {
             $driverName = 'pattern';
         }

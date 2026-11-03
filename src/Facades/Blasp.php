@@ -53,13 +53,15 @@ class Blasp extends BaseFacade
 
     public static function withoutFiltering(Closure $callback): mixed
     {
-        $fake = new BlaspFake();
-        static::swap($fake);
+        // swap() rebinds the container instance, so put the previous one back afterwards;
+        // clearing the facade's cache alone left filtering off for the rest of the process
+        $previous = static::getFacadeRoot();
+        static::swap(new BlaspFake());
 
         try {
             return $callback();
         } finally {
-            static::clearResolvedInstance('blasp');
+            static::swap($previous);
         }
     }
 
