@@ -23,12 +23,12 @@ class FalsePositiveFilter
 
     public function __construct(array $falsePositives)
     {
-        $this->falsePositivesMap = array_flip(array_map('strtolower', $falsePositives));
+        $this->falsePositivesMap = array_flip(array_map(fn ($word) => mb_strtolower($word, 'UTF-8'), $falsePositives));
     }
 
     public function isFalsePositive(string $word): bool
     {
-        return isset($this->falsePositivesMap[strtolower($word)]);
+        return isset($this->falsePositivesMap[mb_strtolower($word, 'UTF-8')]);
     }
 
     // The last hex token seen, when it consisted only of hex digits and dashes. Every match
@@ -155,15 +155,23 @@ class FalsePositiveFilter
 
     public function getFullWordContext(string $string, int $start, int $length): string
     {
+        // $start/$length are byte offsets. Both sides are scanned one character at a time,
+        // so the work is bounded by the word's length rather than the text's
         $left = $start;
-        $right = $start + $length;
-
-        // Extend across multibyte word characters on both sides ($start/$length are byte offsets)
-        if (preg_match('/' . self::WORD_CHAR . '+$/u', substr($string, 0, $start), $m)) {
-            $left -= strlen($m[0]);
+        while ($left > 0) {
+            $charStart = $left - 1;
+            // Step back over UTF-8 continuation bytes to the start of the character
+            while ($charStart > 0 && $left - $charStart < 4 && (ord($string[$charStart]) & 0xC0) === 0x80) {
+                $charStart--;
+            }
+            if (!preg_match('/^' . self::WORD_CHAR . '$/u', substr($string, $charStart, $left - $charStart))) {
+                break;
+            }
+            $left = $charStart;
         }
 
-        if (preg_match('/^' . self::WORD_CHAR . '+/u', substr($string, $right), $m)) {
+        $right = $start + $length;
+        if (preg_match('/\G' . self::WORD_CHAR . '+/u', $string, $m, 0, $right)) {
             $right += strlen($m[0]);
         }
 

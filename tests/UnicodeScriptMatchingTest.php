@@ -2,6 +2,7 @@
 
 namespace Blaspsoft\Blasp\Tests;
 
+use Blaspsoft\Blasp\Core\Matchers\CompoundWordDetector;
 use Blaspsoft\Blasp\Core\Matchers\FalsePositiveFilter;
 use Blaspsoft\Blasp\Facades\Blasp;
 use Illuminate\Support\Facades\Config;
@@ -61,5 +62,36 @@ class UnicodeScriptMatchingTest extends TestCase
         $this->assertTrue(Blasp::check('f-u-c-k')->isOffensive());
         $this->assertTrue(Blasp::driver('pattern')->check('what the fuck')->isOffensive());
         $this->assertFalse(Blasp::check('scunthorpe')->isOffensive());
+    }
+
+    public function test_full_word_context_does_not_cross_a_trailing_newline()
+    {
+        $filter = new FalsePositiveFilter([]);
+
+        $this->assertSame('ass', $filter->getFullWordContext("foo\nass", 4, 3));
+        $this->assertSame('foo', $filter->getFullWordContext("foo\nass", 0, 3));
+    }
+
+    public function test_full_word_context_extends_across_accented_letters()
+    {
+        $filter = new FalsePositiveFilter([]);
+        $text = 'un classé ici';
+
+        $this->assertSame('classé', $filter->getFullWordContext($text, strpos($text, 'ass'), 3));
+    }
+
+    public function test_false_positive_lookup_is_case_insensitive_for_non_ascii_letters()
+    {
+        $filter = new FalsePositiveFilter(['Émile']);
+
+        $this->assertTrue($filter->isFalsePositive('émile'));
+        $this->assertTrue($filter->isFalsePositive('ÉMILE'));
+    }
+
+    public function test_latin_match_inside_an_accented_word_is_judged_as_a_compound()
+    {
+        $detector = new CompoundWordDetector();
+
+        $this->assertTrue($detector->isPureAlphaSubstring('ass', 'classé', 'ass', ['ass' => '']));
     }
 }
