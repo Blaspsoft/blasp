@@ -11,6 +11,7 @@ use Blaspsoft\Blasp\Core\Normalizers\GermanNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\DutchNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\FrenchNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\DevanagariNormalizer;
+use Blaspsoft\Blasp\Core\Normalizers\HomoglyphNormalizer;
 use Blaspsoft\Blasp\Exceptions\UnknownLanguageException;
 use Illuminate\Support\Facades\Cache;
 
@@ -24,6 +25,7 @@ class Dictionary
     private array $substitutions;
     private array $severityMap;
     private array $profanityExpressions;
+    private ?HomoglyphNormalizer $foldingNormalizer = null;
     private StringNormalizer $normalizer;
     private array $allowList;
     private array $blockList;
@@ -83,7 +85,8 @@ class Dictionary
             $this->profanityExpressions = (new RegexMatcher())->generateExpressions(
                 $this->profanities,
                 $this->separators,
-                $this->substitutions
+                $this->substitutions,
+                (bool) config('blasp.flexible_phrases', false)
             );
         }
     }
@@ -232,9 +235,17 @@ class Dictionary
         return $this->severityMap[$lower] ?? Severity::High;
     }
 
+    /**
+     * The normalizer drivers run the text through before matching: the language's own,
+     * followed by homoglyph folding when `blasp.homoglyphs` is on.
+     */
     public function getNormalizer(): StringNormalizer
     {
-        return $this->normalizer;
+        if (!config('blasp.homoglyphs', false)) {
+            return $this->normalizer;
+        }
+
+        return $this->foldingNormalizer ??= new HomoglyphNormalizer($this->normalizer);
     }
 
     public function getLanguage(): string
@@ -369,14 +380,37 @@ class Dictionary
         return $base;
     }
 
+    /**
+     * Digit and symbol stand-ins that are not in the default table because they also
+     * change results for existing text, added when `blasp.extended_substitutions` is on.
+     */
+    private const EXTENDED_SUBSTITUTIONS = [
+        '/l/' => ['1'],
+        '/t/' => ['7', '+'],
+        '/z/' => ['2'],
+    ];
+
+    private static function withExtendedSubstitutions(array $substitutions): array
+    {
+        if (!config('blasp.extended_substitutions', false)) {
+            return $substitutions;
+        }
+
+        foreach (self::EXTENDED_SUBSTITUTIONS as $pattern => $values) {
+            $substitutions[$pattern] = array_values(array_unique(array_merge($substitutions[$pattern] ?? [], $values)));
+        }
+
+        return $substitutions;
+    }
+
     private static function loadGlobalConfig(): array
     {
         return [
             'separators' => config('blasp.separators', config('blasp.drivers.regex.separators', [])),
-            'substitutions' => self::mergeSubstitutions(
+            'substitutions' => self::withExtendedSubstitutions(self::mergeSubstitutions(
                 config('blasp.substitutions', config('blasp.drivers.regex.substitutions', [])),
                 (array) config('blasp.substitutions_append', [])
-            ),
+            )),
             'false_positives' => config('blasp.false_positives', []),
         ];
     }

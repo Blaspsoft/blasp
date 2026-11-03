@@ -21,9 +21,13 @@ class RegexMatcher
     /** @var array<string, array<string, string>> */
     private static array $expressionCache = [];
 
-    public function generateExpressions(array $profanities, array $separators, array $substitutions): array
+    /**
+     * @param  bool  $flexiblePhrases  Treat a space in a list entry as a separator slot, so
+     *                                 "sieg heil" also matches "sieg-heil" and "siegheil"
+     */
+    public function generateExpressions(array $profanities, array $separators, array $substitutions, bool $flexiblePhrases = false): array
     {
-        $key = hash('xxh128', serialize([$profanities, $separators, $substitutions]));
+        $key = hash('xxh128', serialize([$profanities, $separators, $substitutions, $flexiblePhrases]));
 
         if (isset(self::$expressionCache[$key])) {
             return self::$expressionCache[$key];
@@ -34,7 +38,7 @@ class RegexMatcher
         $profanityExpressions = [];
 
         foreach ($profanities as $profanity) {
-            $profanityExpressions[$profanity] = $this->buildProfanityExpression($profanity, $units, $separators);
+            $profanityExpressions[$profanity] = $this->buildProfanityExpression($profanity, $units, $separators, $flexiblePhrases);
         }
 
         // Bounded so a long-running worker (Octane, queues) with many allow/block list
@@ -164,7 +168,7 @@ class RegexMatcher
      * matched, by the letter, but no longer two ways, which kept a long run of them
      * ("!!!!…" against "lickme") backtracking for seconds.
      */
-    private function buildProfanityExpression(string $profanity, array $units, array $separators): string
+    private function buildProfanityExpression(string $profanity, array $units, array $separators, bool $flexiblePhrases = false): string
     {
         // Split the word into substitution units and literal characters, longest key first
         $sequence = [];
@@ -182,6 +186,18 @@ class RegexMatcher
             }
 
             $char = mb_substr($profanity, $i, 1, 'UTF-8');
+
+            if ($flexiblePhrases && preg_match('/^\s$/u', $char)) {
+                // A letter unit already ends in a separator slot, which covers the space;
+                // after anything else the slot is added here
+                $previous = end($sequence);
+                if ($previous === false || isset($previous['literal'])) {
+                    $sequence[] = ['pattern' => $this->generateSeparatorExpression($separators), 'chars' => [], 'literal' => true];
+                }
+                $i++;
+                continue;
+            }
+
             // Letters and combining marks with no substitution entry (e.g. Devanagari) still
             // take separators, so "मा-दर-चोद" matches like "f-u-c-k"; other literals do not
             $sequence[] = [

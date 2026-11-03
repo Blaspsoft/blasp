@@ -434,6 +434,11 @@ return [
     'substitutions'        => [...],  // Character leet-speak mappings
     'substitutions_append' => [],     // Extra characters merged into 'substitutions' per letter
     'false_positives'      => [...],  // Words that should never be flagged
+
+    // Opt-in matching options (all off by default, as they change results for existing text)
+    'homoglyphs'             => false,  // Fold Cyrillic/Greek lookalikes, fullwidth and accented letters
+    'extended_substitutions' => false,  // Add 1 → l, 7 and + → t, 2 → z
+    'flexible_phrases'       => false,  // "sieg heil" also matches "sieg-heil" and "siegheil"
 ];
 ```
 
@@ -444,6 +449,16 @@ return [
 ```php
 'substitutions_append' => ['/u/' => ['v']],   // "fvck" now matches "fuck"
 ```
+
+### Opt-in matching options
+
+| Option | Catches | Trade-off |
+|--------|---------|-----------|
+| `homoglyphs` | `fuсk` (Cyrillic с), `ｆｕｃｋ`, `dāmn` | Folding runs after the language normalizer, so German `ä → ae` still applies. Requires `ext-intl` or the bundled `symfony/polyfill-intl-normalizer` for accented letters. |
+| `extended_substitutions` | `s1ut`, `sh17`, `j122` | Digits next to letters (version numbers, codes) can now complete a word. |
+| `flexible_phrases` | `sieg-heil`, `siegheil` for the entry `sieg heil` | Multi-word entries also match when run together. |
+
+The original text is always what gets masked; only matching sees the folded form.
 
 ## Custom Drivers
 
