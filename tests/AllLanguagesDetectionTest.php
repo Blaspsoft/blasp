@@ -28,6 +28,16 @@ class AllLanguagesDetectionTest extends TestCase
                 'text' => 'Eres un maldito hijo de puta',
                 'expected_profanities' => ['maldito', 'hijo de puta', 'puta'],
                 'min_count' => 2
+            ],
+            'hindi' => [
+                'text' => 'तू चूतिया है aur madarchod bhi',
+                'expected_profanities' => ['चूतिया', 'madarchod'],
+                'min_count' => 2
+            ],
+            'nepali' => [
+                'text' => 'ए मुजी machikne',
+                'expected_profanities' => ['मुजी', 'machikne'],
+                'min_count' => 2
             ]
         ];
 
@@ -75,6 +85,14 @@ class AllLanguagesDetectionTest extends TestCase
             'spanish' => [
                 'mierda' => ['MIERDA', 'Mierda', 'mierda', 'MiErDa'],
                 'joder' => ['JODER', 'Joder', 'joder', 'JoDeR']
+            ],
+            'hindi' => [
+                'chutiya' => ['CHUTIYA', 'Chutiya', 'chutiya', 'ChUtIyA', 'चूतिया', 'चुतिया'],
+                'madarchod' => ['MADARCHOD', 'Madarchod', 'madarchod', 'मादरचोद'],
+            ],
+            'nepali' => [
+                'muji' => ['MUJI', 'Muji', 'muji', 'MuJi', 'मुजी', 'मुजि'],
+                'machikne' => ['MACHIKNE', 'Machikne', 'machikne', 'माछिक्ने'],
             ],
             'english' => [
                 'fuck' => ['FUCK', 'Fuck', 'fuck', 'FuCk', 'f@ck', 'f*ck'],

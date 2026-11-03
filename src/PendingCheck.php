@@ -159,6 +159,16 @@ class PendingCheck
         return $this->in('dutch');
     }
 
+    public function hindi(): self
+    {
+        return $this->in('hindi');
+    }
+
+    public function nepali(): self
+    {
+        return $this->in('nepali');
+    }
+
     // --- Configure (backward-compat) ---
 
     public function configure(?array $profanities = null, ?array $falsePositives = null): self

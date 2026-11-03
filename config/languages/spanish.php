@@ -442,6 +442,7 @@ return [
     
     'false_positives' => [
         // Common Spanish words that might be detected as false positives
+        'lado', 'lados', // Nepali romanized profanity "lado" — suppress when Spanish is loaded alongside
         'análisis',
         'analisis',
         'clase',
