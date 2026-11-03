@@ -93,6 +93,12 @@ return [
     |--------------------------------------------------------------------------
     | Middleware Configuration
     |--------------------------------------------------------------------------
+    |
+    | Nested and array input is checked too, by dotted path ("comment.body",
+    | "tags.0"). 'fields' and 'except' accept dotted paths and wildcards
+    | ("comments.*.body"); a name without a dot also matches nested keys
+    | with that name. Password fields are never checked.
+    |
     */
     'middleware' => [
         'action' => 'reject',

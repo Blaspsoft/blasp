@@ -4,6 +4,10 @@ namespace Blaspsoft\Blasp\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 use Blaspsoft\Blasp\BlaspManager;
 use Blaspsoft\Blasp\Testing\BlaspFake;
@@ -12,6 +16,8 @@ use Blaspsoft\Blasp\Enums\Severity;
 
 class CheckProfanity
 {
+    private const ACTIONS = ['reject', 'sanitize'];
+
     /**
      * The manager is resolved from the container when the request is handled (unless one
      * is passed in), so routes using the middleware also work after Blasp::fake().
@@ -23,19 +29,17 @@ class CheckProfanity
     public function handle(Request $request, Closure $next, ?string $action = null, ?string $severity = null): Response
     {
         $action = $action ?? config('blasp.middleware.action', 'reject');
-        $minimumSeverity = $severity ? (Severity::tryFrom($severity) ?? Severity::Mild) : Severity::tryFrom(config('blasp.middleware.severity', 'mild'));
+        if (!in_array($action, self::ACTIONS, true)) {
+            throw new InvalidArgumentException(sprintf('Invalid blasp middleware action "%s". Use one of: %s.', $action, implode(', ', self::ACTIONS)));
+        }
+
+        $minimumSeverity = $this->resolveSeverity($severity ?? config('blasp.middleware.severity', 'mild'));
         $fields = config('blasp.middleware.fields', ['*']);
         $except = config('blasp.middleware.except', ['password', 'email', '_token']);
 
-        if ($fields !== ['*']) {
-            $input = collect($request->only($fields))->except($except)->all();
-        } else {
-            $input = $request->except($except);
-        }
+        $errors = [];
 
-        $textFields = $this->extractTextFields($input);
-
-        foreach ($textFields as $field => $value) {
+        foreach ($this->extractTextFields($request->all(), $fields, $except) as $field => $value) {
             $pendingCheck = ($this->manager ?? app('blasp'))->newPendingCheck();
 
             if ($minimumSeverity) {
@@ -44,35 +48,125 @@ class CheckProfanity
 
             $result = $pendingCheck->check($value);
 
-            if ($result->isOffensive()) {
-                if (config('blasp.events', false)) {
-                    event(new ContentBlocked($result, $request, $field, $action));
-                }
-
-                if ($action === 'reject') {
-                    return response()->json([
-                        'message' => 'The request contains inappropriate content.',
-                        'errors' => [$field => ['The ' . $field . ' field contains profanity.']],
-                    ], 422);
-                }
-
-                if ($action === 'sanitize') {
-                    $request->merge([$field => $result->clean()]);
-                }
+            if (!$result->isOffensive()) {
+                continue;
             }
+
+            if (config('blasp.events', false)) {
+                event(new ContentBlocked($result, $request, $field, $action));
+            }
+
+            if ($action === 'reject') {
+                $errors[$field] = ['The ' . $field . ' field contains profanity.'];
+            } else {
+                $this->replaceInput($request, $field, $result->clean());
+            }
+        }
+
+        if ($errors !== []) {
+            // JSON clients get the same response as before; form posts are redirected back
+            // with the errors, like any other failed validation
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'The request contains inappropriate content.',
+                    'errors' => $errors,
+                ], 422);
+            }
+
+            throw ValidationException::withMessages($errors);
         }
 
         return $next($request);
     }
 
-    protected function extractTextFields(array $input): array
+    /**
+     * Every non-empty string in the input, keyed by its dotted path ("comment.body",
+     * "tags.0"), so nested and array input is checked too.
+     *
+     * @return array<string, string>
+     */
+    protected function extractTextFields(array $input, array $fields = ['*'], array $except = []): array
     {
-        $fields = [];
-        foreach ($input as $key => $value) {
-            if (is_string($value) && !empty(trim($value))) {
-                $fields[$key] = $value;
+        $texts = [];
+
+        foreach (Arr::dot($input) as $key => $value) {
+            $key = (string) $key;
+
+            if (!is_string($value) || trim($value) === '') {
+                continue;
+            }
+
+            if ($fields !== ['*'] && !$this->matches($key, $fields)) {
+                continue;
+            }
+
+            if ($this->matches($key, $except) || $this->isPasswordField($key)) {
+                continue;
+            }
+
+            $texts[$key] = $value;
+        }
+
+        return $texts;
+    }
+
+    /**
+     * A dotted key matches a pattern by its full path ("user.bio", "comments.*.body") or,
+     * for patterns without a dot, by its last segment ("email" also matches "user.email").
+     */
+    private function matches(string $key, array $patterns): bool
+    {
+        $last = Str::afterLast($key, '.');
+
+        foreach ($patterns as $pattern) {
+            $pattern = (string) $pattern;
+
+            if (Str::is($pattern, $key) || $key === $pattern || Str::startsWith($key, $pattern . '.')) {
+                return true;
+            }
+
+            if (!str_contains($pattern, '.') && Str::is($pattern, $last)) {
+                return true;
             }
         }
-        return $fields;
+
+        return false;
+    }
+
+    /**
+     * Passwords are never checked: rejecting "Shit12345" is unhelpful and sanitizing one
+     * would silently change it.
+     */
+    private function isPasswordField(string $key): bool
+    {
+        return str_contains(strtolower(Str::afterLast($key, '.')), 'password');
+    }
+
+    private function replaceInput(Request $request, string $field, string $clean): void
+    {
+        $top = Str::before($field, '.');
+
+        if ($top === $field) {
+            $request->merge([$field => $clean]);
+            return;
+        }
+
+        $value = $request->input($top);
+        data_set($value, Str::after($field, '.'), $clean);
+        $request->merge([$top => $value]);
+    }
+
+    private function resolveSeverity(mixed $severity): ?Severity
+    {
+        if ($severity === null || $severity instanceof Severity) {
+            return $severity;
+        }
+
+        return Severity::tryFrom(strtolower(trim((string) $severity)))
+            ?? throw new InvalidArgumentException(sprintf(
+                'Invalid blasp middleware severity "%s". Use one of: %s.',
+                $severity,
+                implode(', ', array_map(fn (Severity $s) => $s->value, Severity::cases()))
+            ));
     }
 }

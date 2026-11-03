@@ -292,16 +292,18 @@ Route::post('/comment', CommentController::class)
 
 | Action | Behaviour |
 |--------|-----------|
-| `reject` (default) | Returns 422 JSON with field errors |
+| `reject` (default) | JSON requests get a 422 with an error per field; form posts are redirected back with validation errors |
 | `sanitize` | Replaces profane fields in the request and continues |
+
+Nested and array input is checked by dotted path (`comment.body`, `tags.0`), and every offending field is reported. Password fields (any field whose name contains `password`) are never checked.
 
 Configure which fields to check in `config/blasp.php`:
 
 ```php
 'middleware' => [
     'action' => 'reject',
-    'fields' => ['*'],                            // '*' = all fields
-    'except' => ['password', 'email', '_token'],  // Always skipped
+    'fields' => ['*'],                            // '*' = all fields; or e.g. ['user.bio', 'comments.*.body']
+    'except' => ['password', 'email', '_token'],  // Skipped; names without a dot also match nested keys
     'severity' => 'mild',
 ],
 ```
