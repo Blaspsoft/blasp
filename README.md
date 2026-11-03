@@ -538,6 +538,18 @@ Enable global events with `'events' => true` in config:
 
 `ModelProfanityDetected` always fires (not gated by the `events` config).
 
+## Upgrading to 4.4
+
+4.4 changes what gets flagged and how misconfiguration is reported. Most apps need no changes; check these:
+
+- **Unknown languages throw.** `Blasp::in('englsh')`, a misspelt `BLASP_LANGUAGE` or `$blaspLanguage` now throw `UnknownLanguageException` instead of silently flagging nothing. Language names are case-insensitive.
+- **`severity` and `false_positives` in `config/blasp.php` are now applied.** They were documented but ignored. `severity` sets the default minimum (the default, `mild`, changes nothing); an invalid value throws.
+- **Middleware checks nested and array input** (`comment.body`, `tags.0`) and reports every offending field. Form posts are redirected back with validation errors; JSON requests get the same 422 response as before. Password fields are never checked. An invalid action or severity throws.
+- **Fewer false positives.** Contractions ("Let's hit", "he'll"), ordinary words that spell a list word when joined ("a hole", "money shot"), runs of `*` (ratings, `**markdown**`, masked passwords), and stretched words ("Hellllo") are no longer flagged. The phonetic driver no longer flags everyday words ("was", "great", "dog"). The French list drops about 1,250 ordinary words.
+- **Base words are lowercase.** `uniqueWords()` and `MatchedWord::$base` report list words in lowercase.
+- **Laravel 10 or later is required** (the validation rule never worked on 8 or 9).
+- **New:** an optional `max_length` (`BLASP_MAX_LENGTH`) for the middleware and validation rule, and `Profanity::maxLength()`.
+
 ## Migrating from v3
 
 ### Namespace Changes
