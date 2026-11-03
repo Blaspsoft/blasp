@@ -334,7 +334,7 @@ $request->validate([
 
 Options also chain on an instance: `Profanity::make()->in('spanish')->severity(Severity::High)`.
 
-> **Tip:** checking time grows with the length of the text, so cap user input before it reaches Blasp: `['bail', 'required', 'string', 'max:5000', Profanity::in('english')]`. With `bail`, Laravel stops at the first failing rule, so over-long input is never checked.
+> **Tip:** checking time grows with the length of the text, so cap user input before it reaches Blasp. Set `max_length` in `config/blasp.php` (or `BLASP_MAX_LENGTH`) and the middleware and rule reject longer text instead of checking it, or use `Profanity::maxLength(5000)` per rule. A `max:` rule with `bail` works too: `['bail', 'string', 'max:5000', Profanity::in('english')]`.
 
 ## Blade Directive
 

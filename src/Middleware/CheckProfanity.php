@@ -37,9 +37,17 @@ class CheckProfanity
         $fields = config('blasp.middleware.fields', ['*']);
         $except = config('blasp.middleware.except', ['password', 'email', '_token']);
 
+        $maxLength = config('blasp.max_length');
         $errors = [];
 
         foreach ($this->extractTextFields($request->all(), $fields, $except) as $field => $value) {
+            // Too long to check: rejected in either mode, since unchecked text cannot be
+            // passed on as sanitized
+            if ($maxLength !== null && mb_strlen($value, 'UTF-8') > (int) $maxLength) {
+                $errors[$field] = ['The ' . $field . ' field is too long to check for profanity.'];
+                continue;
+            }
+
             $pendingCheck = ($this->manager ?? app('blasp'))->newPendingCheck();
 
             if ($minimumSeverity) {

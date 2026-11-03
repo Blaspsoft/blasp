@@ -52,6 +52,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Maximum Length
+    |--------------------------------------------------------------------------
+    |
+    | Checking time grows with the length of the text. When set, the
+    | middleware and the validation rule reject text longer than this many
+    | characters instead of checking it. Calls to Blasp::check() are not
+    | limited. Null turns the limit off.
+    |
+    */
+    'max_length' => env('BLASP_MAX_LENGTH'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Match Embedded Profanity
     |--------------------------------------------------------------------------
     |

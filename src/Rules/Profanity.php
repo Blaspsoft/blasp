@@ -13,15 +13,18 @@ use Blaspsoft\Blasp\Enums\Severity;
  * @method static self in(string $language)
  * @method static self maxScore(int $score)
  * @method static self severity(Severity $severity)
+ * @method static self maxLength(int $characters)
  * @method self in(string $language)
  * @method self maxScore(int $score)
  * @method self severity(Severity $severity)
+ * @method self maxLength(int $characters)
  */
 class Profanity implements ValidationRule
 {
     protected ?string $language = null;
     protected ?int $maxScore = null;
     protected ?Severity $minimumSeverity = null;
+    protected ?int $maxLength = null;
 
     public static function make(): self
     {
@@ -49,10 +52,17 @@ class Profanity implements ValidationRule
         return $this;
     }
 
+    protected function withMaxLength(int $characters): self
+    {
+        $this->maxLength = $characters;
+        return $this;
+    }
+
     public function __call(string $name, array $arguments): self
     {
         return match ($name) {
             'in' => $this->withLanguage(...$arguments),
+            'maxLength' => $this->withMaxLength(...$arguments),
             'maxScore' => $this->withMaxScore(...$arguments),
             'severity' => $this->withSeverity(...$arguments),
             default => throw new \BadMethodCallException(sprintf('Method %s::%s does not exist.', static::class, $name)),
@@ -67,6 +77,12 @@ class Profanity implements ValidationRule
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (!is_string($value)) {
+            return;
+        }
+
+        $maxLength = $this->maxLength ?? config('blasp.max_length');
+        if ($maxLength !== null && mb_strlen($value, 'UTF-8') > (int) $maxLength) {
+            $fail('The :attribute is too long to check for profanity.');
             return;
         }
 
