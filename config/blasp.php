@@ -218,6 +218,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Appended Character Substitutions
+    |--------------------------------------------------------------------------
+    |
+    | Substitutions added to the table above, keyed the same way. Set this in
+    | the published config to extend the defaults without copying the whole
+    | table; the characters are merged per letter.
+    |
+    | 'substitutions_append' => ['/u/' => ['v']],
+    |
+    */
+    'substitutions_append' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | False Positives
     |--------------------------------------------------------------------------
     */
@@ -238,6 +252,21 @@ return [
     |
     */
     'allow' => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Safe Words
+    |--------------------------------------------------------------------------
+    |
+    | Words the installed application must never flag. Unlike the allow list,
+    | they are also treated as false positives, so a safe word is not masked
+    | for a shorter profanity inside it ("vacuum", "scunthorpe").
+    |
+    | A published language file may also return its own 'safe_words' list;
+    | both are merged.
+    |
+    */
+    'safe_words' => [],
 
     /*
     |--------------------------------------------------------------------------

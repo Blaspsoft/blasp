@@ -410,14 +410,31 @@ return [
         ],
     ],
 
-    'allow'  => [],    // Global allow-list
-    'block'  => [],    // Global block-list
+    'allow'      => [],    // Global allow-list
+    'block'      => [],    // Global block-list
+    'safe_words' => [],    // Never flagged, and not masked for a shorter word inside them
 
-    'separators'      => [...],  // Characters treated as separators
-    'substitutions'   => [...],  // Character leet-speak mappings
-    'false_positives' => [...],  // Words that should never be flagged
+    'separators'           => [...],  // Characters treated as separators
+    'substitutions'        => [...],  // Character leet-speak mappings
+    'substitutions_append' => [],     // Extra characters merged into 'substitutions' per letter
+    'false_positives'      => [...],  // Words that should never be flagged
 ];
 ```
+
+### Extending without copying package files
+
+`safe_words` and `substitutions_append` let an app adjust detection from its published `config/blasp.php` without copying the language files or the whole substitution table:
+
+```php
+// Never flag these. Unlike 'allow', a safe word is also treated as a false positive,
+// so "vacuum" is not masked for the "cum" inside it when matchEmbedded() is on.
+'safe_words' => ['acme', 'vacuum'],
+
+// Merged into the default table per letter: "fvck" now matches "fuck"
+'substitutions_append' => ['/u/' => ['v']],
+```
+
+A published language file (`config/languages/{language}.php`) may also return its own `'safe_words'` list; it is merged with the app-level one.
 
 ## Custom Drivers
 
