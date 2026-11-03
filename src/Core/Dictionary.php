@@ -167,7 +167,11 @@ class Dictionary
             separators: $globalConfig['separators'] ?? [],
             substitutions: $substitutions,
             severityMap: $allSeverityMap,
-            normalizer: self::getNormalizerForLanguage('english'),
+            // DevanagariNormalizer only maps Devanagari code points, so it is safe for the
+            // Latin-script languages checked alongside Hindi or Nepali
+            normalizer: self::getNormalizerForLanguage(
+                array_intersect(['hindi', 'nepali'], $languages) !== [] ? 'hindi' : 'english'
+            ),
             allowList: $options['allow'] ?? [],
             blockList: $options['block'] ?? [],
             language: implode(',', $languages),

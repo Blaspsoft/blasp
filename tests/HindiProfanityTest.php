@@ -3,6 +3,7 @@
 namespace Blaspsoft\Blasp\Tests;
 
 use Blaspsoft\Blasp\Core\Dictionary;
+use Blaspsoft\Blasp\Core\Normalizers\DevanagariNormalizer;
 use Blaspsoft\Blasp\Enums\Severity;
 use Blaspsoft\Blasp\Facades\Blasp;
 
@@ -162,5 +163,26 @@ class HindiProfanityTest extends TestCase
     public function test_english_only_check_ignores_hindi()
     {
         $this->assertFalse(Blasp::english()->check('चूतिया')->isOffensive());
+    }
+
+    public function test_combined_checks_apply_devanagari_normalization()
+    {
+        $this->assertInstanceOf(DevanagariNormalizer::class, Dictionary::forAllLanguages()->getNormalizer());
+        $this->assertInstanceOf(DevanagariNormalizer::class, Dictionary::forLanguages(['english', 'nepali'])->getNormalizer());
+        $this->assertNotInstanceOf(DevanagariNormalizer::class, Dictionary::forLanguages(['english', 'spanish'])->getNormalizer());
+    }
+
+    public function test_chandrabindu_spelling_is_detected_in_all_languages()
+    {
+        // Chandrabindu "गाँड" folds to the anusvara list entry "गांड"
+        $this->assertTrue(Blasp::hindi()->check('तेरी गाँड')->isOffensive());
+        $this->assertTrue(Blasp::allLanguages()->check('तेरी गाँड')->isOffensive());
+        $this->assertTrue(Blasp::in('english', 'hindi')->check('तेरी गाँड')->isOffensive());
+    }
+
+    public function test_nukta_spelling_is_detected_in_all_languages()
+    {
+        // Precomposed "ड़" (U+095C) folds to "ड"
+        $this->assertTrue(Blasp::allLanguages()->check("तेरी गां\u{095C}")->isOffensive());
     }
 }
