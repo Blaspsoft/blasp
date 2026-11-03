@@ -56,22 +56,22 @@ class ConfigKeysHonouredTest extends TestCase
 
     public function test_global_false_positives_config_is_applied()
     {
-        $this->assertTrue(Blasp::check('spicy food')->isOffensive());
+        $this->assertTrue(Blasp::check('what a tosser')->isOffensive());
 
-        Config::set('blasp.false_positives', ['spicy']);
+        Config::set('blasp.false_positives', ['tosser']);
 
-        $this->assertFalse(Blasp::check('spicy food')->isOffensive());
+        $this->assertFalse(Blasp::check('what a tosser')->isOffensive());
     }
 
     public function test_global_false_positives_apply_to_every_language()
     {
-        Config::set('blasp.false_positives', ['spicy']);
+        Config::set('blasp.false_positives', ['tosser']);
 
-        $this->assertFalse(Blasp::inAllLanguages()->check('spicy food')->isOffensive());
+        $this->assertFalse(Blasp::inAllLanguages()->check('what a tosser')->isOffensive());
     }
 
     public function test_configure_false_positives_are_applied()
     {
-        $this->assertFalse(Blasp::configure(null, ['spicy'])->check('spicy food')->isOffensive());
+        $this->assertFalse(Blasp::configure(null, ['tosser'])->check('what a tosser')->isOffensive());
     }
 }

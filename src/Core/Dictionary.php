@@ -44,7 +44,13 @@ class Dictionary
     ) {
         // A blank word compiles to an expression that matches the empty string, which made
         // the regex driver loop forever (e.g. a block list from explode(',', env(...)))
-        $this->profanities = self::withoutBlankWords($profanities);
+        // List words are matched case-insensitively, but the expression builder only knows
+        // lowercase letters: a capitalised entry ("Fukah") compiled its capital as a single
+        // literal character, without substitutions or repeats
+        $this->profanities = array_values(array_unique(array_map(
+            fn ($word) => mb_strtolower($word, 'UTF-8'),
+            self::withoutBlankWords($profanities)
+        )));
         $this->falsePositives = $falsePositives;
         $this->separators = $separators;
         $this->substitutions = $substitutions;

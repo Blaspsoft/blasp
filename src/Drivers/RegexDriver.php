@@ -106,6 +106,20 @@ class RegexDriver implements DriverInterface
                             continue;
                         }
 
+                        // Ordinary words that happen to spell a profanity when joined ("a hole",
+                        // "money shot") or written as a contraction ("he'll")
+                        if ($this->filter->isJoinOfCleanWords($matchedText, $profanity, $profanityExpressions)
+                            || $this->filter->isContraction($matchedText, $normalizedString, $byteStart, $profanity)) {
+                            continue;
+                        }
+
+                        // A match starting with the * wildcard is not a word when it has no letters
+                        // ("*****" ratings, "********" passwords) or ends inside a longer word
+                        // ("**bold**", "*italic*"); "*sshole" or "*r1ne" still match
+                        if (str_starts_with($matchedText, '*') && $this->filter->isWildcardRun($matchedText, $normalizedString, $byteStart)) {
+                            continue;
+                        }
+
                         // Check hex/UUID token (filter uses byte-level operations)
                         if ($this->filter->isInsideHexToken($normalizedString, $byteStart, $byteLength)) {
                             continue;

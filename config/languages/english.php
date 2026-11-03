@@ -1352,6 +1352,9 @@ return [
     ],
     
     'false_positives' => [
+        // Ordinary words that are a list word plus a suffix
+        'spicy', 'spicier', 'spiciest', 'cocker', 'cockers', 'prickly', 'pricklier', 'prickliest',
+        'dicky', 'knobs', 'cummings',
         'hello',
         'scunthorpe',
         'cockburn',
