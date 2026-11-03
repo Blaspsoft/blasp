@@ -32,7 +32,7 @@ return [
             'paki', 'raghead', 'towelhead', 'sandnigger', 'beaner',
             'gringo', 'wop', 'dago', 'polack', 'retard', 'retarded',
             'faggot', 'fag', 'dyke', 'tranny',
-            'poof', 'shemale', 'spastic', 'white power', 'niqqer', 'niqqa', 'kkk', 'sieg heil', 'neonazi',
+            'poof', 'shemale', 'spastic', 'niqqer', 'niqqa', 'kkk', 'sieg heil', 'neonazi',
         ],
     ],
 
@@ -1391,7 +1391,6 @@ return [
         'spastic',
         'tea bagging',
         'tubgirl',
-        'white power',
         'fcuk',
         'niqqer',
         'niqqa',
@@ -1404,6 +1403,8 @@ return [
         // Ordinary words that are a list word plus a suffix
         // Ordinary words containing 'poof'
         'spoof', 'spoofs', 'spoofed', 'spoofing', 'spoofer', 'spoofers',
+        // Ordinary phrase that contains a list entry
+        'cream pie', 'cream pies', 'boston cream pie',
         'spicy', 'spicier', 'spiciest', 'cocker', 'cockers', 'prickly', 'pricklier', 'prickliest',
         'dicky', 'knobs', 'cummings',
         // Ordinary word pairs that spell a list word when joined

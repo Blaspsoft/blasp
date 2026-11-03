@@ -32,7 +32,7 @@ return [
             'niquer', 'nique', 'baiser', 'baise',
             'foutre', 'foutu', 'foutue', 'chier',
             'bite', 'pute', 'fils de pute',
-            'branler', 'branlette', 'branleur', 'branleuse', 'branlage', 'chiottes', 'clito', 'enculeur', 'enculeurs', 'enfoire', 'enfoiree', 'tringler', 'turlute', 'zigounette', 'bigornette', 'brackmard', 'bloblos', 'teuch', 'troncher', 'palucher', 'malpt',
+            'branler', 'branlette', 'branleur', 'branleuse', 'branlage', 'chiottes', 'clito', 'enculeur', 'enculeurs', 'enfoire', 'enfoiree', 'tringler', 'zigounette', 'bigornette', 'brackmard', 'bloblos', 'teuch', 'troncher', 'palucher', 'malpt',
         ],
         'extreme' => [
             'pédé', 'pede', 'pédés', 'pedes',
@@ -311,7 +311,6 @@ return [
         'teuch',
         'tringler',
         'troncher',
-        'turlute',
         'zigounette',
         'zizi',
     ],

@@ -22,7 +22,7 @@ return [
             'hintern', 'po', 'popo',
             'schwul', 'schwuler', 'schwule', 'schwules',
             'bimbo', 'flittchen', 'reudig',
-            'schabracke', 'vollpfosten', 'bratze', 'tittchen',
+            'vollpfosten', 'bratze', 'tittchen',
             'morgenlatte', 'milf',
         ],
         'high' => [
@@ -31,7 +31,7 @@ return [
             'hurensohn', 'hurenkind', 'arschficker',
             'vögeln', 'voegeln', 'bumsen',
             'analritter', 'arschlecker', 'hackfresse', 'kackbratze',
-            'pimpern', 'pissen', 'pisser', 'schnackeln',
+            'pimpern', 'pissen', 'pisser',
             'schwanzlutscher',
         ],
         'extreme' => [
@@ -1086,8 +1086,6 @@ return [
         'pissen',
         'pisser',
         'reudig',
-        'schabracke',
-        'schnackeln',
         'schwanzlutscher',
         'schwuchtel',
         'tittchen',
