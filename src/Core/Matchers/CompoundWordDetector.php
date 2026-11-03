@@ -12,7 +12,9 @@ class CompoundWordDetector
             return false;
         }
 
-        if (!preg_match('/^[a-zA-Z]+$/', $fullWord)) {
+        // The word context spans accented and other Unicode letters ("classé"), so a
+        // Latin match inside such a word is still judged as a compound
+        if (!preg_match('/^[\p{L}\p{M}]+$/u', $fullWord)) {
             return false;
         }
 

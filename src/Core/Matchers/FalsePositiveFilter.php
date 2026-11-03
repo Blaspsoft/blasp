@@ -4,6 +4,10 @@ namespace Blaspsoft\Blasp\Core\Matchers;
 
 class FalsePositiveFilter
 {
+    // Unicode word character: letters, digits, underscore and combining marks.
+    // PCRE's \w (even with /u) excludes marks, which breaks Devanagari vowel signs.
+    private const WORD_CHAR = '[\p{L}\p{N}\p{M}_]';
+
     private const CONTRACTION_STEMS = [
         'i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'what', 'that', 'there', 'here',
         'let', 'how', 'where', 'why', 'when', 'this', 'these', 'those', 'which', 'one',
@@ -19,12 +23,12 @@ class FalsePositiveFilter
 
     public function __construct(array $falsePositives)
     {
-        $this->falsePositivesMap = array_flip(array_map('strtolower', $falsePositives));
+        $this->falsePositivesMap = array_flip(array_map(fn ($word) => mb_strtolower($word, 'UTF-8'), $falsePositives));
     }
 
     public function isFalsePositive(string $word): bool
     {
-        return isset($this->falsePositivesMap[strtolower($word)]);
+        return isset($this->falsePositivesMap[mb_strtolower($word, 'UTF-8')]);
     }
 
     // The last hex token seen, when it consisted only of hex digits and dashes. Every match
@@ -151,15 +155,24 @@ class FalsePositiveFilter
 
     public function getFullWordContext(string $string, int $start, int $length): string
     {
+        // $start/$length are byte offsets. Both sides are scanned one character at a time,
+        // so the work is bounded by the word's length rather than the text's
         $left = $start;
-        $right = $start + $length;
-
-        while ($left > 0 && preg_match('/\w/', $string[$left - 1])) {
-            $left--;
+        while ($left > 0) {
+            $charStart = $left - 1;
+            // Step back over UTF-8 continuation bytes to the start of the character
+            while ($charStart > 0 && $left - $charStart < 4 && (ord($string[$charStart]) & 0xC0) === 0x80) {
+                $charStart--;
+            }
+            if (!preg_match('/^' . self::WORD_CHAR . '$/u', substr($string, $charStart, $left - $charStart))) {
+                break;
+            }
+            $left = $charStart;
         }
 
-        while ($right < strlen($string) && preg_match('/\w/', $string[$right])) {
-            $right++;
+        $right = $start + $length;
+        if (preg_match('/\G' . self::WORD_CHAR . '+/u', $string, $m, 0, $right)) {
+            $right += strlen($m[0]);
         }
 
         return substr($string, $left, $right - $left);
@@ -224,7 +237,7 @@ class FalsePositiveFilter
         }
 
         $next = $chars[0] ?? '';
-        if ($next !== '' && preg_match('/\w/u', $next)) {
+        if ($next !== '' && preg_match('/' . self::WORD_CHAR . '/u', $next)) {
             return true;
         }
 

@@ -32,7 +32,9 @@ class PatternDriver implements DriverInterface
 
         foreach ($profanities as $profanity) {
             $lowerProfanity = mb_strtolower($profanity, 'UTF-8');
-            $pattern = '/\b' . preg_quote($lowerProfanity, '/') . '\b/iu';
+            // Explicit Unicode word boundary — \b treats Devanagari vowel signs (\p{M}) as
+            // non-word chars, so "\bचूतिया\b" would never match
+            $pattern = '/(?<![\p{L}\p{N}\p{M}_])' . preg_quote($lowerProfanity, '/') . '(?![\p{L}\p{N}\p{M}_])/iu';
 
             // Match the original text case-insensitively: lowercasing can change its length
             // ("İ" becomes two characters), which shifted every later match position
