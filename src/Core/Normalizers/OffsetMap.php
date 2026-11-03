@@ -113,6 +113,27 @@ class OffsetMap
         $lengths = [];
         $max = 0;
 
+        // Normalizers rewrite within runs of letters, so a long chunk is split at the
+        // characters between them and each run is mapped on its own
+        if ($count > self::MAX_PREFIX_SCAN) {
+            $pieces = preg_split('/([^\p{L}\p{M}]+)/u', $chunk, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) ?: [];
+            if (count($pieces) > 1) {
+                foreach ($pieces as $piece) {
+                    foreach (self::chunkBoundaries($piece, $transform) as $length) {
+                        $lengths[] = $max + $length;
+                    }
+                    $max = end($lengths);
+                }
+
+                if ($max === mb_strlen($transform($chunk), 'UTF-8')) {
+                    return $lengths;
+                }
+
+                $lengths = [];
+                $max = 0;
+            }
+        }
+
         if ($count <= self::MAX_PREFIX_SCAN) {
             $prefix = '';
             foreach ($chars as $char) {

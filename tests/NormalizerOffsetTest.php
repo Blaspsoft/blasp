@@ -84,6 +84,17 @@ class NormalizerOffsetTest extends TestCase
         $this->assertSame([0, 3], $map->toOriginal(0, 2));
     }
 
+    public function test_offset_map_handles_long_chunk_without_spaces()
+    {
+        // Over the prefix-scan limit, so the chunk is split at the punctuation instead
+        $text = 'äsch!fick!' . str_repeat('x', 247);
+        $map = OffsetMap::build($text, fn (string $s) => (new GermanNormalizer())->normalize($s));
+
+        // Normalized "aesh!fick!…": "fick" starts at 5 in both
+        $this->assertSame([5, 4], $map->toOriginal(5, 4));
+        $this->assertSame([0, 4], $map->toOriginal(0, 4));
+    }
+
     public function test_offset_map_covers_expanded_umlaut()
     {
         $map = OffsetMap::build('blöd', fn (string $s) => (new GermanNormalizer())->normalize($s));
