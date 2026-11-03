@@ -3,6 +3,7 @@
 namespace Blaspsoft\Blasp\Rules;
 
 use Closure;
+use Blaspsoft\Blasp\BlaspManager;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Blaspsoft\Blasp\Enums\Severity;
 
@@ -80,8 +81,8 @@ class Profanity implements ValidationRule
             return;
         }
 
-        $maxLength = $this->maxLength ?? config('blasp.max_length');
-        if ($maxLength !== null && mb_strlen($value, 'UTF-8') > (int) $maxLength) {
+        $maxLength = $this->maxLength ?? BlaspManager::maxLength();
+        if ($maxLength !== null && mb_strlen($value, 'UTF-8') > $maxLength) {
             $fail('The :attribute is too long to check for profanity.');
             return;
         }

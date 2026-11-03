@@ -53,6 +53,23 @@ class MaxLengthTest extends TestCase
         $this->assertTrue(Validator::make(['b' => 'hello there'], ['b' => [Profanity::make()->in('english')->maxLength(5)]])->fails());
     }
 
+    public function test_invalid_max_length_config_throws()
+    {
+        Config::set('blasp.max_length', 'abc');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('blasp.max_length');
+
+        Validator::make(['b' => 'hello'], ['b' => [Profanity::make()]])->fails();
+    }
+
+    public function test_numeric_string_max_length_from_env_works()
+    {
+        Config::set('blasp.max_length', '10');
+
+        $this->assertTrue(Validator::make(['b' => 'hello there friend'], ['b' => [Profanity::make()]])->fails());
+    }
+
     public function test_direct_checks_are_not_limited()
     {
         Config::set('blasp.max_length', 5);

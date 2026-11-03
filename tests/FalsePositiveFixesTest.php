@@ -23,6 +23,7 @@ class FalsePositiveFixesTest extends TestCase
             "it's hitting" => ["It's hitting the shelves next week."],
             "he'll" => ["He'll be there at five."],
             "she'll" => ['She’ll go to the meeting tomorrow.'],
+            "can't" => ["I can't make it, and they won't either."],
             'a hole' => ['There is a hole in the road.'],
             'dam nation' => ['The dam nation project was approved.'],
             'money shot' => ['That photo was the money shot of the campaign.'],
@@ -51,6 +52,8 @@ class FalsePositiveFixesTest extends TestCase
         return [
             ['f*u*c*k'], ['f*ck'], ['f**k'], ['sh*t'], ['a$$hole'], ['@ss'], ['b!tch'], ['*sshole'],
             ['f u c k'], ['sh it'], ['a-s-s'], ['what the f***'], ['fuuuuuck'], ['FFuukkaahh'],
+            // Split with ordinary-looking parts, or with an apostrophe as the separator
+            ['fuc ker'], ['bit ches'], ['shi tty'], ["cun't"], ["shi't"], ["twa't"],
         ];
     }
 

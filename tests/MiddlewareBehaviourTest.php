@@ -74,6 +74,18 @@ class MiddlewareBehaviourTest extends TestCase
             ->assertExactJson(['comment' => ['body' => 'what the ****', 'id' => 5], 'tags' => ['****', 'ok']]);
     }
 
+    public function test_json_body_gets_json_errors_even_without_json_accept_header()
+    {
+        $this->call('POST', '/reject', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => '*/*'], json_encode(['body' => 'fuck you']))
+            ->assertStatus(422)
+            ->assertJsonPath('errors.body.0', 'The body field contains profanity.');
+    }
+
+    public function test_values_under_a_password_field_are_not_checked()
+    {
+        $this->postJson('/reject', ['password' => ['new' => 'Shit12345', 'confirm' => 'Shit12345']])->assertOk();
+    }
+
     public function test_form_posts_are_redirected_back_with_errors()
     {
         $this->from('/form')->post('/form-reject', ['body' => 'fuck you'])

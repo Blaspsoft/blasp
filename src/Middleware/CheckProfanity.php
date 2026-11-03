@@ -37,13 +37,13 @@ class CheckProfanity
         $fields = config('blasp.middleware.fields', ['*']);
         $except = config('blasp.middleware.except', ['password', 'email', '_token']);
 
-        $maxLength = config('blasp.max_length');
+        $maxLength = BlaspManager::maxLength();
         $errors = [];
 
         foreach ($this->extractTextFields($request->all(), $fields, $except) as $field => $value) {
             // Too long to check: rejected in either mode, since unchecked text cannot be
             // passed on as sanitized
-            if ($maxLength !== null && mb_strlen($value, 'UTF-8') > (int) $maxLength) {
+            if ($maxLength !== null && mb_strlen($value, 'UTF-8') > $maxLength) {
                 $errors[$field] = ['The ' . $field . ' field is too long to check for profanity.'];
                 continue;
             }
@@ -72,9 +72,9 @@ class CheckProfanity
         }
 
         if ($errors !== []) {
-            // JSON clients get the same response as before; form posts are redirected back
-            // with the errors, like any other failed validation
-            if ($request->expectsJson()) {
+            // JSON clients (by Accept header or JSON body) get the same response as before;
+            // form posts are redirected back with the errors, like any other failed validation
+            if ($request->expectsJson() || $request->isJson()) {
                 return response()->json([
                     'message' => 'The request contains inappropriate content.',
                     'errors' => $errors,
@@ -147,7 +147,8 @@ class CheckProfanity
      */
     private function isPasswordField(string $key): bool
     {
-        return str_contains(strtolower(Str::afterLast($key, '.')), 'password');
+        // Any segment, so values under a password field ("password.new") are skipped too
+        return str_contains(strtolower($key), 'password');
     }
 
     private function replaceInput(Request $request, string $field, string $clean): void

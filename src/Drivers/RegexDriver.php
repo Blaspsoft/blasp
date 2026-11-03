@@ -106,10 +106,8 @@ class RegexDriver implements DriverInterface
                             continue;
                         }
 
-                        // Ordinary words that happen to spell a profanity when joined ("a hole",
-                        // "money shot") or written as a contraction ("he'll")
-                        if ($this->filter->isJoinOfCleanWords($matchedText, $profanity, $profanityExpressions)
-                            || $this->filter->isContraction($matchedText, $normalizedString, $byteStart, $profanity)) {
+                        // A contraction that spells a list word with the apostrophe as a separator ("he'll")
+                        if ($this->filter->isContraction($matchedText, $normalizedString, $byteStart, $profanity)) {
                             continue;
                         }
 

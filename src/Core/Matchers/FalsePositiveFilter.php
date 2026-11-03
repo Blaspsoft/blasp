@@ -4,11 +4,15 @@ namespace Blaspsoft\Blasp\Core\Matchers;
 
 class FalsePositiveFilter
 {
-    // Common one- and two-letter words. A spaced-out match made only of real words is two
-    // words, not an obfuscation; "sh" or "fu" are not words, so "sh it" still matches.
-    private const SHORT_WORDS = [
-        'a', 'i', 'o', 'am', 'an', 'as', 'at', 'be', 'by', 'do', 'go', 'he', 'if', 'in', 'is',
-        'it', 'me', 'my', 'no', 'of', 'oh', 'ok', 'on', 'or', 'so', 'to', 'up', 'us', 'we',
+    private const CONTRACTION_STEMS = [
+        'i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'what', 'that', 'there', 'here',
+        'let', 'how', 'where', 'why', 'when', 'this', 'these', 'those', 'which', 'one',
+        'everyone', 'someone', 'nobody', 'everybody', 'somebody', 'nothing', 'something', 'everything',
+    ];
+
+    private const NEGATIVE_STEMS = [
+        'ca', 'wo', 'do', 'does', 'did', 'is', 'are', 'was', 'were', 'has', 'have', 'had',
+        'could', 'should', 'would', 'must', 'need', 'might', 'ai', 'sha',
     ];
 
     private array $falsePositivesMap;
@@ -178,7 +182,16 @@ class FalsePositiveFilter
         preg_match("/^[\p{L}'\x{2019}]*/u", substr($fullString, $matchEnd, 64), $after);
         $word = ($before[0] ?? '') . $matchedText . ($after[0] ?? '');
 
-        return preg_match("/^\p{L}+['\x{2019}](?:s|ll|re|ve|d|t|m)$/iu", $word) === 1;
+        // Only real contraction stems: an arbitrary stem would also exempt obfuscations
+        // that use the apostrophe as a separator ("cun't", "shi't")
+        $word = mb_strtolower(str_replace("\u{2019}", "'", $word), 'UTF-8');
+
+        if (preg_match("/^(.+)n't$/", $word, $negative)) {
+            return in_array($negative[1], self::NEGATIVE_STEMS, true);
+        }
+
+        return preg_match("/^(.+)'(?:s|ll|re|ve|d|m)$/", $word, $stem) === 1
+            && in_array($stem[1], self::CONTRACTION_STEMS, true);
     }
 
     /**
@@ -216,61 +229,6 @@ class FalsePositiveFilter
         }
 
         return ($next === "'" || $next === "\u{2019}") && preg_match('/\p{L}/u', $chars[1] ?? '') === 1;
-    }
-
-    /**
-     * Whether a match spanning whitespace just joins ordinary clean words ("a hole",
-     * "dam nation", "money shot"), rather than spelling out a word with spaces ("f u c k",
-     * "sh it") or a phrase that contains a profanity ("fuck you", "bull shit").
-     */
-    public function isJoinOfCleanWords(string $matchedText, string $profanity, array $profanityExpressions): bool
-    {
-        if (!preg_match('/\s/u', $matchedText) || preg_match('/\s/u', $profanity)) {
-            return false;
-        }
-
-        $parts = preg_split('/\s+/u', trim($matchedText), -1, PREG_SPLIT_NO_EMPTY);
-        if (count($parts) < 2) {
-            return false;
-        }
-
-        foreach ($parts as $part) {
-            $lower = mb_strtolower($part, 'UTF-8');
-
-            if (!preg_match('/^\p{L}+$/u', $part) || $this->isProfaneWord($lower, $profanityExpressions)) {
-                return false;
-            }
-
-            if (mb_strlen($part, 'UTF-8') < 3 && !in_array($lower, self::SHORT_WORDS, true)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /** @var array<string, bool> */
-    private array $profaneWords = [];
-
-    /**
-     * Whether a whole word is itself a list word, as written or obfuscated ("fück").
-     */
-    private function isProfaneWord(string $word, array $profanityExpressions): bool
-    {
-        if (isset($this->profaneWords[$word])) {
-            return $this->profaneWords[$word];
-        }
-
-        $profane = isset($profanityExpressions[$word]);
-
-        foreach ($profane ? [] : $profanityExpressions as $expression) {
-            if (preg_match($expression, $word, $match) === 1 && $match[0] === $word) {
-                $profane = true;
-                break;
-            }
-        }
-
-        return $this->profaneWords[$word] = $profane;
     }
 
     /**

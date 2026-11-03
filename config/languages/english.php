@@ -1351,6 +1351,8 @@ return [
         // Ordinary words that are a list word plus a suffix
         'spicy', 'spicier', 'spiciest', 'cocker', 'cockers', 'prickly', 'pricklier', 'prickliest',
         'dicky', 'knobs', 'cummings',
+        // Ordinary word pairs that spell a list word when joined
+        'a hole', 'dam nation', 'money shot',
         'hello',
         'scunthorpe',
         'cockburn',
