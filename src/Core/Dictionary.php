@@ -10,6 +10,7 @@ use Blaspsoft\Blasp\Core\Normalizers\SpanishNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\GermanNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\DutchNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\FrenchNormalizer;
+use Blaspsoft\Blasp\Exceptions\UnknownLanguageException;
 use Illuminate\Support\Facades\Cache;
 
 class Dictionary
@@ -82,17 +83,7 @@ class Dictionary
 
     public static function forLanguage(string $language, array $options = []): self
     {
-        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $language)) {
-            return new self(
-                profanities: [],
-                falsePositives: [],
-                separators: [],
-                substitutions: [],
-                severityMap: [],
-                normalizer: new EnglishNormalizer(),
-                language: $language,
-            );
-        }
+        $language = self::resolveLanguage($language);
 
         $config = self::loadLanguageConfig($language);
         $globalConfig = self::loadGlobalConfig();
@@ -128,6 +119,8 @@ class Dictionary
 
     public static function forLanguages(array $languages, array $options = []): self
     {
+        $languages = array_map(fn ($language) => self::resolveLanguage((string) $language), $languages);
+
         $allProfanities = [];
         $allFalsePositives = [];
         $allSeverityMap = [];
@@ -272,6 +265,38 @@ class Dictionary
         }
 
         return empty($languages) ? ['english'] : $languages;
+    }
+
+    /**
+     * Normalize a language name ("English " → "english") and make sure it has a word list.
+     *
+     * @throws UnknownLanguageException
+     */
+    public static function resolveLanguage(string $language): string
+    {
+        $resolved = strtolower(trim($language));
+
+        if (!preg_match('/^[a-z0-9_-]+$/', $resolved) || self::languageFile($resolved) === null) {
+            throw UnknownLanguageException::for($language, self::getAvailableLanguages());
+        }
+
+        return $resolved;
+    }
+
+    private static function languageFile(string $language): ?string
+    {
+        $possiblePaths = [
+            config_path("languages/{$language}.php"),
+            __DIR__ . "/../../config/languages/{$language}.php",
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     public static function loadLanguageConfig(string $language): array
