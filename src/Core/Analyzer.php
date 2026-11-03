@@ -5,9 +5,15 @@ namespace Blaspsoft\Blasp\Core;
 use Blaspsoft\Blasp\Core\Contracts\DriverInterface;
 use Blaspsoft\Blasp\Core\Contracts\MaskStrategyInterface;
 use Blaspsoft\Blasp\Core\Masking\CharacterMask;
+use Blaspsoft\Blasp\Core\Masking\TextMasker;
 
 class Analyzer
 {
+    // Runs of one character longer than this are shortened before matching. Nothing in
+    // a word needs more repeats ("fuuuuuuuck" still matches), and long runs ("!!!!…",
+    // "aaaa…") are what made the expressions backtrack for seconds.
+    public const MAX_RUN = 8;
+
     public function analyze(
         string $text,
         DriverInterface $driver,
@@ -17,37 +23,58 @@ class Analyzer
     ): Result {
         $mask = $mask ?? new CharacterMask(config('blasp.mask', config('blasp.mask_character', '*')));
 
+        // Malformed UTF-8 is repaired once here, as the regex and pattern drivers already did,
+        // so every driver and the checks below see valid text. Otherwise one bad byte crashed
+        // the pipeline driver and made the /u checks below silently skip invisible characters.
+        if (!mb_check_encoding($text, 'UTF-8')) {
+            $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        }
+
         // Invisible Unicode format characters (zero-width spaces, invisible separators, etc.)
-        // are stripped before any driver sees the text, ensuring consistent positions across
-        // pipeline drivers. preg_match returns false on malformed UTF-8, which drivers handle.
-        if (preg_match('/\p{Cf}/u', $text) !== 1) {
+        // are removed before any driver sees the text, ensuring consistent positions across
+        // pipeline drivers, and long runs of one character are shortened.
+        if (preg_match('/\p{Cf}|(.)\1{' . self::MAX_RUN . '}/u', $text) !== 1) {
             return $driver->detect($text, $dictionary, $mask, $options);
         }
 
-        // Map each character of the stripped text back to its position in the original
+        // Map each character of the reduced text back to its position in the original
         $chars = mb_str_split($text, 1, 'UTF-8');
-        $stripped = '';
+        $reduced = '';
         $positionMap = [];
+        $shortened = [];
+        $previous = null;
+        $run = 0;
         foreach ($chars as $i => $char) {
-            if (preg_match('/^\p{Cf}$/u', $char) !== 1) {
-                $stripped .= $char;
-                $positionMap[] = $i;
+            if (preg_match('/^\p{Cf}$/u', $char) === 1) {
+                continue;
             }
+
+            $run = $char === $previous ? $run + 1 : 1;
+            $previous = $char;
+
+            if ($run > self::MAX_RUN) {
+                $shortened[$i] = true;
+                continue;
+            }
+
+            $reduced .= $char;
+            $positionMap[] = $i;
         }
 
         // The driver's clean text is rebuilt below, so it gets a plain mask; the real one
         // (which may be a callback) is applied once per match during the rebuild
-        $result = $driver->detect($stripped, $dictionary, new CharacterMask('*'), $options);
+        $result = $driver->detect($reduced, $dictionary, new CharacterMask('*'), $options);
 
-        return $this->restoreFormatCharacters($text, $result, $positionMap, $mask);
+        return $this->restoreOriginal($text, $chars, $result, $positionMap, $shortened, $mask);
     }
 
     /**
-     * Rebuild the result against the original text so format characters outside a match
-     * (e.g. the zero-width joiners in emoji sequences like 💆‍♀️) are kept. Any inside a
-     * match are masked away along with the profanity.
+     * Rebuild the result against the original text. Format characters outside a match
+     * (e.g. the zero-width joiners in emoji sequences like 💆‍♀️) are kept, and any inside a
+     * match are masked away along with the profanity. A match that ends in a shortened run
+     * covers the whole run.
      */
-    private function restoreFormatCharacters(string $text, Result $result, array $positionMap, MaskStrategyInterface $mask): Result
+    private function restoreOriginal(string $text, array $chars, Result $result, array $positionMap, array $shortened, MaskStrategyInterface $mask): Result
     {
         $matchedWords = [];
         $replacements = [];
@@ -55,13 +82,20 @@ class Analyzer
         // Driver positions come from normalized text, which can be longer than the input
         // (German ä → ae), so clamp them to the input rather than reading past its end
         $last = count($positionMap) - 1;
+        $count = count($chars);
 
         foreach ($result->words() as $word) {
             $start = $positionMap[min($word->position, $last)];
             $end = $positionMap[min($word->position + $word->length - 1, $last)] + 1;
 
+            while ($end < $count && isset($shortened[$end])) {
+                $end++;
+            }
+
+            $original = mb_substr($text, $start, $end - $start, 'UTF-8');
+
             $matchedWords[] = new MatchedWord(
-                text: mb_substr($text, $start, $end - $start, 'UTF-8'),
+                text: $original,
                 base: $word->base,
                 severity: $word->severity,
                 position: $start,
@@ -69,17 +103,12 @@ class Analyzer
                 language: $word->language,
             );
 
-            $replacements[] = [$start, $end, $mask->mask($word->text, $word->length)];
+            // Mask the original span minus its format characters
+            $visible = preg_replace('/\p{Cf}/u', '', $original) ?? $original;
+            $replacements[] = [$start, $end - $start, $mask->mask($visible, mb_strlen($visible, 'UTF-8'))];
         }
 
-        // Mask right-to-left so earlier positions stay valid
-        usort($replacements, fn ($a, $b) => $b[0] - $a[0]);
-        $cleanText = $text;
-        foreach ($replacements as [$start, $end, $replacement]) {
-            $cleanText = mb_substr($cleanText, 0, $start, 'UTF-8')
-                . $replacement
-                . mb_substr($cleanText, $end, null, 'UTF-8');
-        }
+        $cleanText = TextMasker::apply($text, $replacements);
 
         return new Result($text, $cleanText, $matchedWords, $result->score());
     }

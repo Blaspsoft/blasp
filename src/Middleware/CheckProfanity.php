@@ -6,13 +6,18 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Blaspsoft\Blasp\BlaspManager;
+use Blaspsoft\Blasp\Testing\BlaspFake;
 use Blaspsoft\Blasp\Events\ContentBlocked;
 use Blaspsoft\Blasp\Enums\Severity;
 
 class CheckProfanity
 {
+    /**
+     * The manager is resolved from the container when the request is handled (unless one
+     * is passed in), so routes using the middleware also work after Blasp::fake().
+     */
     public function __construct(
-        protected BlaspManager $manager
+        protected BlaspManager|BlaspFake|null $manager = null
     ) {}
 
     public function handle(Request $request, Closure $next, ?string $action = null, ?string $severity = null): Response
@@ -31,7 +36,7 @@ class CheckProfanity
         $textFields = $this->extractTextFields($input);
 
         foreach ($textFields as $field => $value) {
-            $pendingCheck = $this->manager->newPendingCheck();
+            $pendingCheck = ($this->manager ?? app('blasp'))->newPendingCheck();
 
             if ($minimumSeverity) {
                 $pendingCheck = $pendingCheck->withSeverity($minimumSeverity);

@@ -41,14 +41,16 @@ class Dictionary
         string $language = 'english',
         ?array $profanityExpressions = null,
     ) {
-        $this->profanities = $profanities;
+        // A blank word compiles to an expression that matches the empty string, which made
+        // the regex driver loop forever (e.g. a block list from explode(',', env(...)))
+        $this->profanities = self::withoutBlankWords($profanities);
         $this->falsePositives = $falsePositives;
         $this->separators = $separators;
         $this->substitutions = $substitutions;
         $this->severityMap = $severityMap;
         $this->normalizer = $normalizer;
-        $this->allowList = array_map('strtolower', $allowList);
-        $this->blockList = array_map('strtolower', $blockList);
+        $this->allowList = array_map('strtolower', self::withoutBlankWords($allowList));
+        $this->blockList = array_map('strtolower', self::withoutBlankWords($blockList));
         $this->language = $language;
 
         // Apply block list — add extra words to profanities
@@ -180,6 +182,23 @@ class Dictionary
     public function getProfanities(): array
     {
         return $this->profanities;
+    }
+
+    /**
+     * @param  array<int, mixed>  $words
+     * @return array<int, string>
+     */
+    private static function withoutBlankWords(array $words): array
+    {
+        $kept = [];
+
+        foreach ($words as $word) {
+            if ((is_string($word) || is_int($word) || is_float($word)) && trim((string) $word) !== '') {
+                $kept[] = (string) $word;
+            }
+        }
+
+        return $kept;
     }
 
     public function getFalsePositives(): array
@@ -341,9 +360,40 @@ class Dictionary
 
     // --- Caching ---
 
+    /**
+     * Identifies the word lists and package version results were computed with, so cached
+     * results are not reused after a language file is edited or the package is upgraded.
+     */
+    public static function cacheFingerprint(): string
+    {
+        $parts = [];
+
+        foreach ([config_path('languages'), __DIR__ . '/../../config/languages'] as $directory) {
+            foreach (glob($directory . '/*.php') ?: [] as $file) {
+                $parts[] = $file . ':' . @filemtime($file) . ':' . @filesize($file);
+            }
+        }
+
+        if (class_exists(\Composer\InstalledVersions::class) && \Composer\InstalledVersions::isInstalled('blaspsoft/blasp')) {
+            $parts[] = \Composer\InstalledVersions::getReference('blaspsoft/blasp');
+        }
+
+        return hash('sha256', implode('|', $parts));
+    }
+
+    /**
+     * Bumped by clearCache(); part of every result cache key, so clearing invalidates all
+     * cached results at once, including ones no longer in the tracked key list.
+     */
+    public static function cacheGeneration(): int
+    {
+        return (int) self::getCache()->get('blasp_cache_generation', 0);
+    }
+
     public static function clearCache(): void
     {
         $cache = self::getCache();
+        $cache->forever('blasp_cache_generation', self::cacheGeneration() + 1);
         $keys = $cache->get('blasp_cache_keys', []);
 
         foreach ($keys as $key) {

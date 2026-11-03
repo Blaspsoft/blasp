@@ -69,25 +69,36 @@ class OffsetMap
     {
         $count = count($this->boundaries) - 1;
 
+        // Boundaries never decrease, so both ends are found by binary search; a linear scan
+        // per match made text with thousands of matches quadratic.
+
         // Start: the last original character that begins at or before $start
-        $originalStart = 0;
-        for ($k = $count; $k >= 0; $k--) {
-            if ($this->boundaries[$k] <= $start) {
-                $originalStart = $k;
-                break;
+        $low = 0;
+        $high = $count;
+        while ($low < $high) {
+            $mid = intdiv($low + $high + 1, 2);
+            if ($this->boundaries[$mid] <= $start) {
+                $low = $mid;
+            } else {
+                $high = $mid - 1;
             }
         }
+        $originalStart = $low;
 
         // End: the first original character that reaches the end of the match, extended over
         // characters that add nothing to the normalized text (the "c" and "h" in sch → sh)
         $end = $start + $length;
-        $originalEnd = $count;
-        for ($k = $originalStart; $k <= $count; $k++) {
-            if ($this->boundaries[$k] >= $end) {
-                $originalEnd = $k;
-                break;
+        $low = $originalStart;
+        $high = $count;
+        while ($low < $high) {
+            $mid = intdiv($low + $high, 2);
+            if ($this->boundaries[$mid] >= $end) {
+                $high = $mid;
+            } else {
+                $low = $mid + 1;
             }
         }
+        $originalEnd = $low;
         while ($originalEnd < $count && $this->boundaries[$originalEnd + 1] === $end
             && !isset($this->whitespace[$originalEnd])) {
             $originalEnd++;

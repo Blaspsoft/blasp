@@ -6,6 +6,7 @@ use Blaspsoft\Blasp\Core\Contracts\DriverInterface;
 use Blaspsoft\Blasp\Core\Contracts\MaskStrategyInterface;
 use Blaspsoft\Blasp\Core\Dictionary;
 use Blaspsoft\Blasp\Core\MatchedWord;
+use Blaspsoft\Blasp\Core\Masking\TextMasker;
 use Blaspsoft\Blasp\Core\Result;
 use Blaspsoft\Blasp\Core\Score;
 
@@ -41,32 +42,26 @@ class PipelineDriver implements DriverInterface
             return $b->length <=> $a->length;
         });
 
-        // 3. Deduplicate overlapping position ranges (greedy, longest-first at each position)
+        // 3. Deduplicate overlapping position ranges (greedy, longest-first at each position).
+        // Kept matches are sorted and disjoint, so a new match can only overlap the one that
+        // ends furthest right; checking just that keeps this linear.
         $kept = [];
+        $keptEnd = PHP_INT_MIN;
         foreach ($allMatches as $match) {
-            $overlaps = false;
-            foreach ($kept as $existing) {
-                $existingEnd = $existing->position + $existing->length;
-                $matchEnd = $match->position + $match->length;
-
-                if ($match->position < $existingEnd && $matchEnd > $existing->position) {
-                    $overlaps = true;
-                    break;
-                }
+            if ($match->length > 0 && $match->position < $keptEnd) {
+                continue;
             }
 
-            if (!$overlaps) {
-                $kept[] = $match;
-            }
+            $kept[] = $match;
+            $keptEnd = max($keptEnd, $match->position + $match->length);
         }
 
-        // 4. Build clean text by applying masks right-to-left (preserves positions)
-        $cleanText = $text;
-        $reversed = array_reverse($kept);
-        foreach ($reversed as $match) {
-            $replacement = $mask->mask($match->text, $match->length);
-            $cleanText = mb_substr($cleanText, 0, $match->position, 'UTF-8') . $replacement . mb_substr($cleanText, $match->position + $match->length, null, 'UTF-8');
+        // 4. Build clean text; masks are generated right-to-left as before
+        $replacements = [];
+        foreach (array_reverse($kept) as $match) {
+            $replacements[] = [$match->position, $match->length, $mask->mask($match->text, $match->length)];
         }
+        $cleanText = TextMasker::apply($text, $replacements);
 
         // 5. Recalculate score from merged matches
         $totalWords = max(1, count(preg_split('/\s+/u', trim($text), -1, PREG_SPLIT_NO_EMPTY)));

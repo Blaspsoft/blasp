@@ -181,7 +181,7 @@ class PendingCheck
 
             $cached = $cache->get($cacheKey);
             if ($cached !== null) {
-                return Result::fromArray($cached);
+                return $this->dispatchEvents(Result::fromArray($cached), $text);
             }
 
             $result = $this->performCheck($text);
@@ -189,10 +189,22 @@ class PendingCheck
             $cache->put($cacheKey, $result->toArray(), $ttl);
             $this->trackCacheKey($cacheKey);
 
-            return $result;
+            return $this->dispatchEvents($result, $text);
         }
 
-        return $this->performCheck($text);
+        return $this->dispatchEvents($this->performCheck($text), $text);
+    }
+
+    /**
+     * Fire ProfanityDetected for every offensive check, cached or not.
+     */
+    protected function dispatchEvents(Result $result, string $text): Result
+    {
+        if ($result->isOffensive() && config('blasp.events', false)) {
+            event(new ProfanityDetected($result, $text));
+        }
+
+        return $result;
     }
 
     protected function performCheck(string $text): Result
@@ -209,14 +221,8 @@ class PendingCheck
         $options['match_embedded'] = $this->shouldMatchEmbedded();
 
         $analyzer = new Analyzer();
-        $result = $analyzer->analyze($text, $driver, $dictionary, $mask, $options);
 
-        // Fire event if configured
-        if ($result->isOffensive() && config('blasp.events', false)) {
-            event(new ProfanityDetected($result, $text));
-        }
-
-        return $result;
+        return $analyzer->analyze($text, $driver, $dictionary, $mask, $options);
     }
 
     public function checkMany(array $texts): array
@@ -264,6 +270,10 @@ class PendingCheck
         }
 
         $driverName = $this->driverName ?? $this->manager->getDefaultDriver();
+
+        if ($this->strictMode) {
+            $driverName = 'regex';
+        }
 
         if ($this->lenientMode) {
             $driverName = 'pattern';
@@ -321,9 +331,25 @@ class PendingCheck
             'lenient' => $this->lenientMode,
             'match_embedded' => $this->shouldMatchEmbedded(),
             'mask' => $this->maskStrategy ? serialize($this->maskStrategy) : null,
+            // Config and word lists also decide the result, so a change to either must
+            // not serve results computed before it
+            'config' => [
+                config('blasp.allow', []),
+                config('blasp.block', []),
+                config('blasp.language'),
+                config('blasp.default_language'),
+                config('blasp.mask'),
+                config('blasp.mask_character'),
+                config('blasp.separators'),
+                config('blasp.substitutions'),
+                config('blasp.false_positives'),
+                config('blasp.drivers'),
+            ],
+            'lists' => Dictionary::cacheFingerprint(),
+            'generation' => Dictionary::cacheGeneration(),
         ];
 
-        return 'blasp_result_' . md5(serialize($parts));
+        return 'blasp_result_' . hash('sha256', serialize($parts));
     }
 
     protected function getCache(): \Illuminate\Contracts\Cache\Repository

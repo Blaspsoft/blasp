@@ -37,7 +37,20 @@ trait Blaspable
             $mode = $model->blaspMode ?? config('blasp.model.mode', 'sanitize');
 
             foreach ($attributes as $attr) {
-                if (!isset($dirty[$attr]) || !is_string($dirty[$attr])) {
+                if (!isset($dirty[$attr])) {
+                    continue;
+                }
+
+                // A cast attribute's dirty value is its stored form (ciphertext, JSON), so
+                // check the cast value instead. Non-string casts (array, json, …) are skipped;
+                // checking their stored form corrupted them on save.
+                $value = $model->hasCast($attr) ? $model->getAttribute($attr) : $dirty[$attr];
+
+                if ($value instanceof \Stringable && !$value instanceof Model) {
+                    $value = (string) $value;
+                }
+
+                if (!is_string($value)) {
                     continue;
                 }
 
@@ -52,7 +65,7 @@ trait Blaspable
                     $check = $check->mask($mask);
                 }
 
-                $result = $check->check($dirty[$attr]);
+                $result = $check->check($value);
                 $model->blaspResultsCache[$attr] = $result;
 
                 if ($result->isOffensive()) {

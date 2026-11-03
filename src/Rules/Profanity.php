@@ -6,6 +6,17 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Blaspsoft\Blasp\Enums\Severity;
 
+/**
+ * Each option works both statically and on an instance:
+ * Profanity::in('spanish') and Profanity::make()->in('spanish').
+ *
+ * @method static self in(string $language)
+ * @method static self maxScore(int $score)
+ * @method static self severity(Severity $severity)
+ * @method self in(string $language)
+ * @method self maxScore(int $score)
+ * @method self severity(Severity $severity)
+ */
 class Profanity implements ValidationRule
 {
     protected ?string $language = null;
@@ -17,27 +28,40 @@ class Profanity implements ValidationRule
         return new self();
     }
 
-    public function in(string $language): self
+    // The options are routed through __call/__callStatic because PHP cannot declare a
+    // static and an instance method with the same name; as public instance methods,
+    // the documented Profanity::in(...) threw "cannot be called statically".
+    protected function withLanguage(string $language): self
     {
         $this->language = $language;
         return $this;
     }
 
-    public function maxScore(int $score): self
+    protected function withMaxScore(int $score): self
     {
         $this->maxScore = $score;
         return $this;
     }
 
-    public function severity(Severity $severity): self
+    protected function withSeverity(Severity $severity): self
     {
         $this->minimumSeverity = $severity;
         return $this;
     }
 
+    public function __call(string $name, array $arguments): self
+    {
+        return match ($name) {
+            'in' => $this->withLanguage(...$arguments),
+            'maxScore' => $this->withMaxScore(...$arguments),
+            'severity' => $this->withSeverity(...$arguments),
+            default => throw new \BadMethodCallException(sprintf('Method %s::%s does not exist.', static::class, $name)),
+        };
+    }
+
     public static function __callStatic(string $name, array $arguments): self
     {
-        return (new self())->$name(...$arguments);
+        return (new self())->__call($name, $arguments);
     }
 
     public function validate(string $attribute, mixed $value, Closure $fail): void

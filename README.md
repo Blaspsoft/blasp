@@ -330,6 +330,10 @@ $request->validate([
 ]);
 ```
 
+Options also chain on an instance: `Profanity::make()->in('spanish')->severity(Severity::High)`.
+
+> **Tip:** checking time grows with the length of the text, so cap user input before it reaches Blasp: `['bail', 'required', 'string', 'max:5000', Profanity::in('english')]`. With `bail`, Laravel stops at the first failing rule, so over-long input is never checked.
+
 ## Blade Directive
 
 The `@clean` directive sanitizes and escapes text for safe display in views:
