@@ -218,6 +218,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Appended Character Substitutions
+    |--------------------------------------------------------------------------
+    |
+    | Substitutions added to the table above, keyed the same way. Set this in
+    | the published config to extend the defaults without copying the whole
+    | table; the characters are merged per letter.
+    |
+    | 'substitutions_append' => ['/u/' => ['v']],
+    |
+    */
+    'substitutions_append' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | False Positives
     |--------------------------------------------------------------------------
     */

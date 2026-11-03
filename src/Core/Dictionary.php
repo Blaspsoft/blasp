@@ -344,11 +344,34 @@ class Dictionary
         return $config;
     }
 
+    /**
+     * $base with the characters of $extra added per letter, so an app can add a few
+     * substitutions in its published config without copying the whole table.
+     *
+     * @param  array<string, array<int, string>>  $base
+     * @param  array<string, mixed>  $extra
+     * @return array<string, array<int, string>>
+     */
+    public static function mergeSubstitutions(array $base, array $extra): array
+    {
+        foreach ($extra as $pattern => $values) {
+            if (!is_array($values)) {
+                continue;
+            }
+            $base[$pattern] = array_values(array_unique(array_merge($base[$pattern] ?? [], $values)));
+        }
+
+        return $base;
+    }
+
     private static function loadGlobalConfig(): array
     {
         return [
             'separators' => config('blasp.separators', config('blasp.drivers.regex.separators', [])),
-            'substitutions' => config('blasp.substitutions', config('blasp.drivers.regex.substitutions', [])),
+            'substitutions' => self::mergeSubstitutions(
+                config('blasp.substitutions', config('blasp.drivers.regex.substitutions', [])),
+                (array) config('blasp.substitutions_append', [])
+            ),
             'false_positives' => config('blasp.false_positives', []),
         ];
     }

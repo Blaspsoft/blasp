@@ -413,10 +413,19 @@ return [
     'allow'  => [],    // Global allow-list
     'block'  => [],    // Global block-list
 
-    'separators'      => [...],  // Characters treated as separators
-    'substitutions'   => [...],  // Character leet-speak mappings
-    'false_positives' => [...],  // Words that should never be flagged
+    'separators'           => [...],  // Characters treated as separators
+    'substitutions'        => [...],  // Character leet-speak mappings
+    'substitutions_append' => [],     // Extra characters merged into 'substitutions' per letter
+    'false_positives'      => [...],  // Words that should never be flagged
 ];
+```
+
+### Adding substitutions
+
+`substitutions_append` adds characters to the default substitution table from your published `config/blasp.php`, without copying the whole table. Characters are merged per letter:
+
+```php
+'substitutions_append' => ['/u/' => ['v']],   // "fvck" now matches "fuck"
 ```
 
 ## Custom Drivers

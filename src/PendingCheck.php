@@ -368,6 +368,7 @@ class PendingCheck
                 config('blasp.mask_character'),
                 config('blasp.separators'),
                 config('blasp.substitutions'),
+                config('blasp.substitutions_append'),
                 config('blasp.false_positives'),
                 config('blasp.severity'),
                 config('blasp.drivers'),
