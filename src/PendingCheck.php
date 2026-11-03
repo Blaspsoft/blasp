@@ -370,7 +370,6 @@ class PendingCheck
                 config('blasp.substitutions'),
                 config('blasp.substitutions_append'),
                 config('blasp.false_positives'),
-                config('blasp.safe_words'),
                 config('blasp.severity'),
                 config('blasp.drivers'),
             ],

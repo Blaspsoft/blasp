@@ -97,7 +97,6 @@ class Dictionary
         $profanities = $config['profanities'] ?? [];
         // The global false_positives config (and configure()'s) apply to every language
         $falsePositives = array_merge($config['false_positives'] ?? [], $options['false_positives'] ?? []);
-        $safeWords = self::safeWords($config);
         $severityMap = self::buildSeverityMap($config);
 
         $substitutions = $globalConfig['substitutions'] ?? [];
@@ -114,12 +113,12 @@ class Dictionary
 
         return new self(
             profanities: $profanities,
-            falsePositives: array_values(array_unique(array_merge($falsePositives, $safeWords))),
+            falsePositives: $falsePositives,
             separators: $globalConfig['separators'] ?? [],
             substitutions: $substitutions,
             severityMap: $severityMap,
             normalizer: self::getNormalizerForLanguage($language),
-            allowList: array_merge($options['allow'] ?? [], $safeWords),
+            allowList: $options['allow'] ?? [],
             blockList: $options['block'] ?? [],
             language: $language,
         );
@@ -132,7 +131,6 @@ class Dictionary
         $allProfanities = [];
         $allFalsePositives = [];
         $allSeverityMap = [];
-        $allSafeWords = self::safeWords();
         $globalConfig = self::loadGlobalConfig();
         $substitutions = $globalConfig['substitutions'] ?? [];
 
@@ -143,7 +141,6 @@ class Dictionary
             $config = self::loadLanguageConfig($language);
             $allProfanities = array_merge($allProfanities, $config['profanities'] ?? []);
             $allFalsePositives = array_merge($allFalsePositives, $config['false_positives'] ?? []);
-            $allSafeWords = array_merge($allSafeWords, self::safeWords($config));
             $allSeverityMap = array_merge($allSeverityMap, self::buildSeverityMap($config));
 
             // Merge accent/diacritic substitutions only
@@ -165,12 +162,12 @@ class Dictionary
 
         return new self(
             profanities: array_values(array_unique($allProfanities)),
-            falsePositives: array_values(array_unique(array_merge($allFalsePositives, $options['false_positives'] ?? [], $allSafeWords))),
+            falsePositives: array_values(array_unique(array_merge($allFalsePositives, $options['false_positives'] ?? []))),
             separators: $globalConfig['separators'] ?? [],
             substitutions: $substitutions,
             severityMap: $allSeverityMap,
             normalizer: self::getNormalizerForLanguage('english'),
-            allowList: array_merge($options['allow'] ?? [], array_values(array_unique($allSafeWords))),
+            allowList: $options['allow'] ?? [],
             blockList: $options['block'] ?? [],
             language: implode(',', $languages),
         );
@@ -345,27 +342,6 @@ class Dictionary
         }
 
         return $config;
-    }
-
-    /**
-     * Words the installed app never wants flagged: config('blasp.safe_words') plus, when
-     * given, the language file's own 'safe_words' list. They are removed from the word
-     * list and also treated as false positives, so a safe word that contains a shorter
-     * profanity ("vacuum") is not masked for it.
-     *
-     * @return array<int, string>
-     */
-    private static function safeWords(array $languageConfig = []): array
-    {
-        $words = [];
-
-        foreach (array_merge((array) ($languageConfig['safe_words'] ?? []), (array) config('blasp.safe_words', [])) as $word) {
-            if (is_string($word) && ($word = trim($word)) !== '') {
-                $words[] = $word;
-            }
-        }
-
-        return array_values(array_unique($words));
     }
 
     /**

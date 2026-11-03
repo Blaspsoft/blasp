@@ -46,4 +46,15 @@ class SubstitutionsAppendTest extends TestCase
             Dictionary::mergeSubstitutions(config('blasp.substitutions'), [])
         );
     }
+
+    public function test_changing_substitutions_append_invalidates_cached_results(): void
+    {
+        Config::set('blasp.cache.results', true);
+
+        $this->assertFalse(Blasp::check('fvck')->isOffensive());
+
+        Config::set('blasp.substitutions_append', ['/u/' => ['v']]);
+
+        $this->assertTrue(Blasp::check('fvck')->isOffensive());
+    }
 }
