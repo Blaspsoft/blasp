@@ -187,6 +187,11 @@ class Dictionary
         return $this->falsePositives;
     }
 
+    public function getBlockList(): array
+    {
+        return $this->blockList;
+    }
+
     public function getProfanityExpressions(): array
     {
         return $this->profanityExpressions;

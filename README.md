@@ -109,7 +109,7 @@ Blasp::withSeverity(Severity::High)->check($text);  // Ignores mild/moderate
 
 // Allow/block lists (merged with config)
 Blasp::allow('damn', 'hell')->check($text);
-Blasp::block('customword')->check($text);
+Blasp::block('customword')->check($text);   // Also matched inside longer words ("xcustomwordx")
 
 // Chain everything
 Blasp::spanish()

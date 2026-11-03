@@ -32,6 +32,9 @@ class RegexDriver implements DriverInterface
 
         $matchEmbedded = (bool) ($options['match_embedded'] ?? false);
 
+        // Words the app blocked explicitly are always matched inside longer words
+        $blockedWords = array_flip($dictionary->getBlockList());
+
         $profanityExpressions = $dictionary->getProfanityExpressions();
 
         // Sort by key length descending (longest profanity first)
@@ -95,7 +98,7 @@ class RegexDriver implements DriverInterface
 
                         // Check pure alpha substring against original (unmasked) normalized
                         $originalFullWord = $this->filter->getFullWordContext($immutableNormalized, $byteStart, $byteLength);
-                        if (!$matchEmbedded && $this->compoundDetector->isPureAlphaSubstring($matchedText, $originalFullWord, $profanity, $profanityExpressions)) {
+                        if (!$matchEmbedded && !isset($blockedWords[$profanity]) && $this->compoundDetector->isPureAlphaSubstring($matchedText, $originalFullWord, $profanity, $profanityExpressions)) {
                             continue;
                         }
 
