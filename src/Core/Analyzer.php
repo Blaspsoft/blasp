@@ -35,7 +35,9 @@ class Analyzer
             }
         }
 
-        $result = $driver->detect($stripped, $dictionary, $mask, $options);
+        // The driver's clean text is rebuilt below, so it gets a plain mask; the real one
+        // (which may be a callback) is applied once per match during the rebuild
+        $result = $driver->detect($stripped, $dictionary, new CharacterMask('*'), $options);
 
         return $this->restoreFormatCharacters($text, $result, $positionMap, $mask);
     }
@@ -50,9 +52,13 @@ class Analyzer
         $matchedWords = [];
         $replacements = [];
 
+        // Driver positions come from normalized text, which can be longer than the input
+        // (German ä → ae), so clamp them to the input rather than reading past its end
+        $last = count($positionMap) - 1;
+
         foreach ($result->words() as $word) {
-            $start = $positionMap[$word->position];
-            $end = $positionMap[$word->position + $word->length - 1] + 1;
+            $start = $positionMap[min($word->position, $last)];
+            $end = $positionMap[min($word->position + $word->length - 1, $last)] + 1;
 
             $matchedWords[] = new MatchedWord(
                 text: mb_substr($text, $start, $end - $start, 'UTF-8'),

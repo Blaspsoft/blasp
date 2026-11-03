@@ -52,6 +52,27 @@ class Issue50Test extends TestCase
         $this->assertSame($text, $result->clean());
     }
 
+    public function test_lengthening_normalizer_does_not_read_past_input()
+    {
+        // The German normalizer turns ä into ae, so driver positions run past the input
+        $result = Blasp::in('german')->block('fuck')->check("ää\u{200D}ä fuck");
+
+        $this->assertTrue($result->isOffensive());
+        $this->assertStringContainsString("\u{200D}", $result->clean());
+    }
+
+    public function test_callback_mask_is_called_once_per_match()
+    {
+        $calls = 0;
+        $result = Blasp::mask(function (string $word, int $length) use (&$calls) {
+            $calls++;
+            return '[removed]';
+        })->check("💆\u{200D}♀️ fuck and shit");
+
+        $this->assertSame(2, $calls);
+        $this->assertSame("💆\u{200D}♀️ [removed] and [removed]", $result->clean());
+    }
+
     public function test_pipeline_driver_preserves_zwj_sequences()
     {
         $result = Blasp::pipeline('regex', 'pattern')->check("💆\u{200D}♀️ fuck");
