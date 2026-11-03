@@ -28,7 +28,7 @@ Blasp is a powerful, extensible profanity filter for Laravel. Version 4 is a gro
 ## Requirements
 
 - PHP 8.2+
-- Laravel 8.0+
+- Laravel 10, 11, 12 or 13
 
 ## Installation
 
@@ -292,16 +292,18 @@ Route::post('/comment', CommentController::class)
 
 | Action | Behaviour |
 |--------|-----------|
-| `reject` (default) | Returns 422 JSON with field errors |
+| `reject` (default) | JSON requests get a 422 with an error per field; form posts are redirected back with validation errors |
 | `sanitize` | Replaces profane fields in the request and continues |
+
+Nested and array input is checked by dotted path (`comment.body`, `tags.0`), and every offending field is reported. Password fields (any field whose name contains `password`) are never checked.
 
 Configure which fields to check in `config/blasp.php`:
 
 ```php
 'middleware' => [
     'action' => 'reject',
-    'fields' => ['*'],                            // '*' = all fields
-    'except' => ['password', 'email', '_token'],  // Always skipped
+    'fields' => ['*'],                            // '*' = all fields; or e.g. ['user.bio', 'comments.*.body']
+    'except' => ['password', 'email', '_token'],  // Skipped; names without a dot also match nested keys
     'severity' => 'mild',
 ],
 ```
@@ -332,7 +334,7 @@ $request->validate([
 
 Options also chain on an instance: `Profanity::make()->in('spanish')->severity(Severity::High)`.
 
-> **Tip:** checking time grows with the length of the text, so cap user input before it reaches Blasp: `['bail', 'required', 'string', 'max:5000', Profanity::in('english')]`. With `bail`, Laravel stops at the first failing rule, so over-long input is never checked.
+> **Tip:** checking time grows with the length of the text, so cap user input before it reaches Blasp. Set `max_length` in `config/blasp.php` (or `BLASP_MAX_LENGTH`) and the middleware and rule reject longer text instead of checking it, or use `Profanity::maxLength(5000)` per rule. A `max:` rule with `bail` works too: `['bail', 'string', 'max:5000', Profanity::in('english')]`.
 
 ## Blade Directive
 
@@ -535,6 +537,18 @@ Enable global events with `'events' => true` in config:
 | `ModelProfanityDetected` | Blaspable trait detects profanity | `model`, `attribute`, `result` |
 
 `ModelProfanityDetected` always fires (not gated by the `events` config).
+
+## Upgrading to 4.4
+
+4.4 changes what gets flagged and how misconfiguration is reported. Most apps need no changes; check these:
+
+- **Unknown languages throw.** `Blasp::in('englsh')`, a misspelt `BLASP_LANGUAGE` or `$blaspLanguage` now throw `UnknownLanguageException` instead of silently flagging nothing. Language names are case-insensitive.
+- **`severity` and `false_positives` in `config/blasp.php` are now applied.** They were documented but ignored. `severity` sets the default minimum (the default, `mild`, changes nothing); an invalid value throws.
+- **Middleware checks nested and array input** (`comment.body`, `tags.0`) and reports every offending field. Form posts are redirected back with validation errors; JSON requests get the same 422 response as before. Password fields are never checked. An invalid action or severity throws.
+- **Fewer false positives.** Contractions ("Let's hit", "he'll", "can't"), common word pairs that spell a list word when joined ("a hole", "money shot"; add your own multi-word entries to `false_positives`), runs of `*` (ratings, `**markdown**`, masked passwords), and stretched words ("Hellllo") are no longer flagged. Split obfuscations such as "fuc ker" or "cun't" are still caught. The phonetic driver no longer flags everyday words ("was", "great", "dog"). The French list drops about 1,250 ordinary words.
+- **Base words are lowercase.** `uniqueWords()` and `MatchedWord::$base` report list words in lowercase.
+- **Laravel 10 or later is required** (the validation rule never worked on 8 or 9).
+- **New:** an optional `max_length` (`BLASP_MAX_LENGTH`) for the middleware and validation rule, and `Profanity::maxLength()`.
 
 ## Migrating from v3
 

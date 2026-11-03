@@ -24,6 +24,7 @@ class PendingCheck
     protected ?MaskStrategyInterface $maskStrategy = null;
     protected array $allowList = [];
     protected array $blockList = [];
+    protected array $falsePositives = [];
     protected ?Severity $minimumSeverity = null;
     protected bool $strictMode = false;
     protected bool $lenientMode = false;
@@ -165,6 +166,9 @@ class PendingCheck
         if ($profanities !== null) {
             $this->blockList = array_merge($this->blockList, $profanities);
         }
+        if ($falsePositives !== null) {
+            $this->falsePositives = array_merge($this->falsePositives, $falsePositives);
+        }
         return $this;
     }
 
@@ -214,8 +218,9 @@ class PendingCheck
         $mask = $this->resolveMask();
 
         $options = [];
-        if ($this->minimumSeverity !== null) {
-            $options['severity'] = $this->minimumSeverity;
+        $severity = $this->minimumSeverity ?? $this->configuredSeverity();
+        if ($severity !== null) {
+            $options['severity'] = $severity;
         }
 
         $options['match_embedded'] = $this->shouldMatchEmbedded();
@@ -241,6 +246,7 @@ class PendingCheck
         $options = [
             'allow' => array_merge(config('blasp.allow', []), $this->allowList),
             'block' => array_merge(config('blasp.block', []), $this->blockList),
+            'false_positives' => array_merge(config('blasp.false_positives', []), $this->falsePositives),
         ];
 
         if ($this->allLanguages) {
@@ -311,6 +317,25 @@ class PendingCheck
         return true;
     }
 
+    /**
+     * The blasp.severity config: the minimum severity when a check sets none.
+     */
+    protected function configuredSeverity(): ?Severity
+    {
+        $value = config('blasp.severity');
+
+        if ($value === null || $value instanceof Severity) {
+            return $value;
+        }
+
+        return Severity::tryFrom(strtolower(trim((string) $value)))
+            ?? throw new \InvalidArgumentException(sprintf(
+                'Invalid blasp.severity "%s". Use one of: %s.',
+                $value,
+                implode(', ', array_map(fn (Severity $s) => $s->value, Severity::cases()))
+            ));
+    }
+
     protected function shouldMatchEmbedded(): bool
     {
         return $this->matchEmbedded ?? (bool) config('blasp.match_embedded', false);
@@ -326,6 +351,7 @@ class PendingCheck
             'all_languages' => $this->allLanguages,
             'allow' => $this->allowList,
             'block' => $this->blockList,
+            'false_positives' => $this->falsePositives,
             'severity' => $this->minimumSeverity?->value,
             'strict' => $this->strictMode,
             'lenient' => $this->lenientMode,
@@ -343,6 +369,7 @@ class PendingCheck
                 config('blasp.separators'),
                 config('blasp.substitutions'),
                 config('blasp.false_positives'),
+                config('blasp.severity'),
                 config('blasp.drivers'),
             ],
             'lists' => Dictionary::cacheFingerprint(),

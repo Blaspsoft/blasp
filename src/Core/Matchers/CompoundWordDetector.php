@@ -20,7 +20,9 @@ class CompoundWordDetector
             return false;
         }
 
-        if (strlen($matchedText) > strlen($profanityKey)) {
+        // Compare with repeated letters collapsed, so a stretched match inside a longer
+        // word ("Hellllo", "classsy", "crapped") is still treated as embedded
+        if (strlen(self::collapse($matchedText)) > strlen(self::collapse($profanityKey))) {
             return false;
         }
 
@@ -44,5 +46,10 @@ class CompoundWordDetector
         }
 
         return true;
+    }
+
+    private static function collapse(string $text): string
+    {
+        return preg_replace('/(.)\1+/', '$1', strtolower($text)) ?? $text;
     }
 }

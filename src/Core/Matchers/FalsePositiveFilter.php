@@ -4,6 +4,17 @@ namespace Blaspsoft\Blasp\Core\Matchers;
 
 class FalsePositiveFilter
 {
+    private const CONTRACTION_STEMS = [
+        'i', 'you', 'he', 'she', 'it', 'we', 'they', 'who', 'what', 'that', 'there', 'here',
+        'let', 'how', 'where', 'why', 'when', 'this', 'these', 'those', 'which', 'one',
+        'everyone', 'someone', 'nobody', 'everybody', 'somebody', 'nothing', 'something', 'everything',
+    ];
+
+    private const NEGATIVE_STEMS = [
+        'ca', 'wo', 'do', 'does', 'did', 'is', 'are', 'was', 'were', 'has', 'have', 'had',
+        'could', 'should', 'would', 'must', 'need', 'might', 'ai', 'sha',
+    ];
+
     private array $falsePositivesMap;
 
     public function __construct(array $falsePositives)
@@ -96,25 +107,12 @@ class FalsePositiveFilter
             return false;
         }
 
-        $matchStartChar = mb_strlen(substr($fullString, 0, $matchStart), 'UTF-8');
-        $matchEndChar = $matchStartChar + mb_strlen($matchedText, 'UTF-8');
+        $matchEnd = $matchStart + strlen($matchedText);
 
-        $embeddedAtStart = false;
-        $embeddedAtEnd = false;
-
-        if ($matchStartChar > 0) {
-            $charBefore = mb_substr($fullString, $matchStartChar - 1, 1, 'UTF-8');
-            if (preg_match('/\w/u', $charBefore)) {
-                $embeddedAtStart = true;
-            }
-        }
-
-        if ($matchEndChar < mb_strlen($fullString, 'UTF-8')) {
-            $charAfter = mb_substr($fullString, $matchEndChar, 1, 'UTF-8');
-            if (preg_match('/\w/u', $charAfter)) {
-                $embeddedAtEnd = true;
-            }
-        }
+        // A word character, or an apostrophe inside a word ("let's", "it's"), next to the
+        // match means that end of it belongs to a longer word
+        $embeddedAtStart = self::continuesWord(self::charsBefore($fullString, $matchStart, 2));
+        $embeddedAtEnd = self::continuesWord(self::charsAfter($fullString, $matchEnd, 2), true);
 
         if ($embeddedAtStart && $embeddedAtEnd) {
             return true;
@@ -165,5 +163,84 @@ class FalsePositiveFilter
         }
 
         return substr($string, $left, $right - $left);
+    }
+
+    /**
+     * Whether a match is a word written with an apostrophe in a contraction ("he'll",
+     * "she'll"): the apostrophe there is part of the word, not an obfuscating separator.
+     */
+    public function isContraction(string $matchedText, string $fullString, int $matchStart, string $profanity = ''): bool
+    {
+        // A list word written with an apostrophe ("nigger's") is matched as written
+        if (!preg_match("/['\x{2019}]/u", $matchedText) || preg_match("/['\x{2019}]/u", $profanity)) {
+            return false;
+        }
+
+        $matchEnd = $matchStart + strlen($matchedText);
+
+        preg_match("/[\p{L}'\x{2019}]*$/u", substr($fullString, max(0, $matchStart - 64), min(64, $matchStart)), $before);
+        preg_match("/^[\p{L}'\x{2019}]*/u", substr($fullString, $matchEnd, 64), $after);
+        $word = ($before[0] ?? '') . $matchedText . ($after[0] ?? '');
+
+        // Only real contraction stems: an arbitrary stem would also exempt obfuscations
+        // that use the apostrophe as a separator ("cun't", "shi't")
+        $word = mb_strtolower(str_replace("\u{2019}", "'", $word), 'UTF-8');
+
+        if (preg_match("/^(.+)n't$/", $word, $negative)) {
+            return in_array($negative[1], self::NEGATIVE_STEMS, true);
+        }
+
+        return preg_match("/^(.+)'(?:s|ll|re|ve|d|m)$/", $word, $stem) === 1
+            && in_array($stem[1], self::CONTRACTION_STEMS, true);
+    }
+
+    /**
+     * Up to $count characters ending at byte offset $offset (nearest last).
+     */
+    private static function charsBefore(string $string, int $offset, int $count): string
+    {
+        $slice = substr($string, max(0, $offset - 4 * $count), min(4 * $count, $offset));
+
+        return mb_substr($slice, -$count, null, 'UTF-8');
+    }
+
+    /**
+     * Up to $count characters starting at byte offset $offset.
+     */
+    private static function charsAfter(string $string, int $offset, int $count): string
+    {
+        return mb_substr(substr($string, $offset, 4 * $count), 0, $count, 'UTF-8');
+    }
+
+    /**
+     * Whether the characters next to a match continue a word: a word character, or an
+     * apostrophe with a letter beyond it. $chars runs outward from the match.
+     */
+    private static function continuesWord(string $chars, bool $forward = false): bool
+    {
+        $chars = mb_str_split($chars, 1, 'UTF-8');
+        if (!$forward) {
+            $chars = array_reverse($chars);
+        }
+
+        $next = $chars[0] ?? '';
+        if ($next !== '' && preg_match('/\w/u', $next)) {
+            return true;
+        }
+
+        return ($next === "'" || $next === "\u{2019}") && preg_match('/\p{L}/u', $chars[1] ?? '') === 1;
+    }
+
+    /**
+     * Whether a match beginning with "*" is a run of asterisks rather than an obfuscated
+     * word: it has no letters or digits, or a letter follows it inside the same word.
+     */
+    public function isWildcardRun(string $matchedText, string $fullString, int $matchStart): bool
+    {
+        if (!preg_match('/[\p{L}\p{N}]/u', $matchedText)) {
+            return true;
+        }
+
+        return preg_match('/^\p{L}/u', self::charsAfter($fullString, $matchStart + strlen($matchedText), 1)) === 1;
     }
 }

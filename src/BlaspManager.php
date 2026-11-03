@@ -106,6 +106,29 @@ class BlaspManager
         return $this;
     }
 
+    /**
+     * The blasp.max_length setting: null (no limit) or a positive number of characters.
+     *
+     * @throws InvalidArgumentException for any other value, rather than treating "abc" as 0
+     */
+    public static function maxLength(): ?int
+    {
+        $value = config('blasp.max_length');
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+            throw new InvalidArgumentException(sprintf(
+                'Invalid blasp.max_length "%s". Use a positive whole number of characters, or null for no limit.',
+                is_scalar($value) ? $value : get_debug_type($value)
+            ));
+        }
+
+        return (int) $value;
+    }
+
     public function getDefaultDriver(): string
     {
         return $this->app['config']->get('blasp.default', 'regex');

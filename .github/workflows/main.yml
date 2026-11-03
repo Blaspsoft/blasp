@@ -6,22 +6,39 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '8.2', laravel: '10.*', testbench: '8.*' }
+          - { php: '8.3', laravel: '11.*', testbench: '9.*' }
+          - { php: '8.2', laravel: '12.*', testbench: '10.*' }
+          - { php: '8.4', laravel: '12.*', testbench: '10.*' }
+          - { php: '8.3', laravel: '13.*', testbench: '11.*' }
+          - { php: '8.4', laravel: '13.*', testbench: '11.*' }
+
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
+
     steps:
-      # Step 1: Check out the repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Set up PHP
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2" # Set your desired PHP version
-          extensions: mbstring, dom, zip
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, dom, zip, pdo_sqlite
+          coverage: none
 
-      # Step 3: Install Composer dependencies
+      # Laravel 10 and 11 are end-of-life and every release has a published security
+      # advisory, which Composer refuses to install by default. This only affects the
+      # throwaway CI install used to test compatibility.
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: |
+          composer config policy.advisories.block false || composer config audit.block-insecure false || true
+          composer require "illuminate/support:${{ matrix.laravel }}" --no-update --no-interaction
+          composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-update --no-interaction
+          composer update --prefer-dist --no-interaction --with-all-dependencies
 
-      # Step 4: Run PHPUnit tests
       - name: Run tests
         run: php ./vendor/bin/phpunit

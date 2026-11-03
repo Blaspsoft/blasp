@@ -106,6 +106,18 @@ class RegexDriver implements DriverInterface
                             continue;
                         }
 
+                        // A contraction that spells a list word with the apostrophe as a separator ("he'll")
+                        if ($this->filter->isContraction($matchedText, $normalizedString, $byteStart, $profanity)) {
+                            continue;
+                        }
+
+                        // A match starting with the * wildcard is not a word when it has no letters
+                        // ("*****" ratings, "********" passwords) or ends inside a longer word
+                        // ("**bold**", "*italic*"); "*sshole" or "*r1ne" still match
+                        if (str_starts_with($matchedText, '*') && $this->filter->isWildcardRun($matchedText, $normalizedString, $byteStart)) {
+                            continue;
+                        }
+
                         // Check hex/UUID token (filter uses byte-level operations)
                         if ($this->filter->isInsideHexToken($normalizedString, $byteStart, $byteLength)) {
                             continue;

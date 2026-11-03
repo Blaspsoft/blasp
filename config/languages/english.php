@@ -37,7 +37,6 @@ return [
     'profanities' => [
         'abbo',
         'abortionist',
-        'abuser',
         'ahole',
         'alabama hotpocket',
         'alligatorbait',
@@ -184,7 +183,6 @@ return [
         'boobs',
         'booby',
         'bootycall',
-        'bountybar',
         'breastjob',
         'breastlover',
         'breastman',
@@ -614,7 +612,6 @@ return [
         'hell',
         'herpes',
         'hijacker',
-        'hijacking',
         'hillbillies',
         'hindoo',
         'hitler',
@@ -730,7 +727,6 @@ return [
         'lipshitz',
         'livesex',
         'lmfao',
-        'loadedgun',
         'lovebone',
         'lovegoo',
         'lovegun',
@@ -1352,6 +1348,11 @@ return [
     ],
     
     'false_positives' => [
+        // Ordinary words that are a list word plus a suffix
+        'spicy', 'spicier', 'spiciest', 'cocker', 'cockers', 'prickly', 'pricklier', 'prickliest',
+        'dicky', 'knobs', 'cummings',
+        // Ordinary word pairs that spell a list word when joined
+        'a hole', 'dam nation', 'money shot',
         'hello',
         'scunthorpe',
         'cockburn',

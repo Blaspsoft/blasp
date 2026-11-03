@@ -30,6 +30,8 @@ class CacheEventsAndCastsTest extends TestCase
 {
     protected function defineEnvironment($app): void
     {
+        parent::defineEnvironment($app);
+
         // The encrypted cast needs an app key; CI has no .env to provide one
         $app['config']->set('app.key', 'base64:' . base64_encode(str_repeat('k', 32)));
     }

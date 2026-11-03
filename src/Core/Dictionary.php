@@ -10,6 +10,7 @@ use Blaspsoft\Blasp\Core\Normalizers\SpanishNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\GermanNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\DutchNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\FrenchNormalizer;
+use Blaspsoft\Blasp\Exceptions\UnknownLanguageException;
 use Illuminate\Support\Facades\Cache;
 
 class Dictionary
@@ -43,7 +44,13 @@ class Dictionary
     ) {
         // A blank word compiles to an expression that matches the empty string, which made
         // the regex driver loop forever (e.g. a block list from explode(',', env(...)))
-        $this->profanities = self::withoutBlankWords($profanities);
+        // List words are matched case-insensitively, but the expression builder only knows
+        // lowercase letters: a capitalised entry ("Fukah") compiled its capital as a single
+        // literal character, without substitutions or repeats
+        $this->profanities = array_values(array_unique(array_map(
+            fn ($word) => mb_strtolower($word, 'UTF-8'),
+            self::withoutBlankWords($profanities)
+        )));
         $this->falsePositives = $falsePositives;
         $this->separators = $separators;
         $this->substitutions = $substitutions;
@@ -82,23 +89,14 @@ class Dictionary
 
     public static function forLanguage(string $language, array $options = []): self
     {
-        if (!preg_match('/^[a-zA-Z0-9_-]+$/', $language)) {
-            return new self(
-                profanities: [],
-                falsePositives: [],
-                separators: [],
-                substitutions: [],
-                severityMap: [],
-                normalizer: new EnglishNormalizer(),
-                language: $language,
-            );
-        }
+        $language = self::resolveLanguage($language);
 
         $config = self::loadLanguageConfig($language);
         $globalConfig = self::loadGlobalConfig();
 
         $profanities = $config['profanities'] ?? [];
-        $falsePositives = $config['false_positives'] ?? [];
+        // The global false_positives config (and configure()'s) apply to every language
+        $falsePositives = array_merge($config['false_positives'] ?? [], $options['false_positives'] ?? []);
         $severityMap = self::buildSeverityMap($config);
 
         $substitutions = $globalConfig['substitutions'] ?? [];
@@ -128,6 +126,8 @@ class Dictionary
 
     public static function forLanguages(array $languages, array $options = []): self
     {
+        $languages = array_map(fn ($language) => self::resolveLanguage((string) $language), $languages);
+
         $allProfanities = [];
         $allFalsePositives = [];
         $allSeverityMap = [];
@@ -162,7 +162,7 @@ class Dictionary
 
         return new self(
             profanities: array_values(array_unique($allProfanities)),
-            falsePositives: array_values(array_unique($allFalsePositives)),
+            falsePositives: array_values(array_unique(array_merge($allFalsePositives, $options['false_positives'] ?? []))),
             separators: $globalConfig['separators'] ?? [],
             substitutions: $substitutions,
             severityMap: $allSeverityMap,
@@ -204,6 +204,11 @@ class Dictionary
     public function getFalsePositives(): array
     {
         return $this->falsePositives;
+    }
+
+    public function getAllowList(): array
+    {
+        return $this->allowList;
     }
 
     public function getBlockList(): array
@@ -272,6 +277,38 @@ class Dictionary
         }
 
         return empty($languages) ? ['english'] : $languages;
+    }
+
+    /**
+     * Normalize a language name ("English " → "english") and make sure it has a word list.
+     *
+     * @throws UnknownLanguageException
+     */
+    public static function resolveLanguage(string $language): string
+    {
+        $resolved = strtolower(trim($language));
+
+        if (!preg_match('/^[a-z0-9_-]+$/', $resolved) || self::languageFile($resolved) === null) {
+            throw UnknownLanguageException::for($language, self::getAvailableLanguages());
+        }
+
+        return $resolved;
+    }
+
+    private static function languageFile(string $language): ?string
+    {
+        $possiblePaths = [
+            config_path("languages/{$language}.php"),
+            __DIR__ . "/../../config/languages/{$language}.php",
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     public static function loadLanguageConfig(string $language): array

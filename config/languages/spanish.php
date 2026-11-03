@@ -92,7 +92,6 @@ return [
         'putilla',
         'putita',
         'perra',
-        'perro',
         'cabrona',
         'cabrones',
         'puton',
