@@ -19,6 +19,10 @@
         "php": "^8.2",
         "illuminate/support": "^10.0|^11.0|^12.0|^13.0"
     },
+    "suggest": {
+        "ext-intl": "Folds accented letters when the homoglyphs option is enabled",
+        "symfony/polyfill-intl-normalizer": "Folds accented letters when the homoglyphs option is enabled and ext-intl is not installed"
+    },
     "require-dev": {
         "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
         "phpunit/phpunit": "^10.5|^11.0|^12.5.12"

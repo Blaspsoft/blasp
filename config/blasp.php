@@ -173,6 +173,44 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Homoglyph Folding
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, characters that imitate Latin letters (Cyrillic and Greek
+    | lookalikes, fullwidth letters and accented letters missing from the
+    | substitution table) are folded to the letter they imitate before
+    | matching, so "fuсk" (Cyrillic с) or "ｆｕｃｋ" is caught. Folding runs
+    | after the language normalizer. The original text is what gets masked.
+    |
+    */
+    'homoglyphs' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Extended Substitutions
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, these are added to the substitution table: 1 → l,
+    | 7 and + → t, 2 → z. They catch "s1ut" and "sh17", but can also flag
+    | text that passed before, so they are off by default.
+    |
+    */
+    'extended_substitutions' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Flexible Phrases
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, a space in a word list entry is a separator slot rather
+    | than a literal space: "sieg heil" also matches "sieg-heil" and
+    | "siegheil".
+    |
+    */
+    'flexible_phrases' => false,
+
+    /*
+    |--------------------------------------------------------------------------
     | Character Separators
     |--------------------------------------------------------------------------
     */
