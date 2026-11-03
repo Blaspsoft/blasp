@@ -360,9 +360,40 @@ class Dictionary
 
     // --- Caching ---
 
+    /**
+     * Identifies the word lists and package version results were computed with, so cached
+     * results are not reused after a language file is edited or the package is upgraded.
+     */
+    public static function cacheFingerprint(): string
+    {
+        $parts = [];
+
+        foreach ([config_path('languages'), __DIR__ . '/../../config/languages'] as $directory) {
+            foreach (glob($directory . '/*.php') ?: [] as $file) {
+                $parts[] = $file . ':' . @filemtime($file) . ':' . @filesize($file);
+            }
+        }
+
+        if (class_exists(\Composer\InstalledVersions::class) && \Composer\InstalledVersions::isInstalled('blaspsoft/blasp')) {
+            $parts[] = \Composer\InstalledVersions::getReference('blaspsoft/blasp');
+        }
+
+        return hash('sha256', implode('|', $parts));
+    }
+
+    /**
+     * Bumped by clearCache(); part of every result cache key, so clearing invalidates all
+     * cached results at once, including ones no longer in the tracked key list.
+     */
+    public static function cacheGeneration(): int
+    {
+        return (int) self::getCache()->get('blasp_cache_generation', 0);
+    }
+
     public static function clearCache(): void
     {
         $cache = self::getCache();
+        $cache->forever('blasp_cache_generation', self::cacheGeneration() + 1);
         $keys = $cache->get('blasp_cache_keys', []);
 
         foreach ($keys as $key) {
