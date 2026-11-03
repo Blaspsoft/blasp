@@ -107,6 +107,21 @@ class OptInMatchingOptionsTest extends TestCase
         }
     }
 
+    public function test_extended_substitutions_combine_with_substitutions_append(): void
+    {
+        Config::set('blasp.extended_substitutions', true);
+        Config::set('blasp.substitutions_append', ['/u/' => ['v'], '/t/' => ['†']]);
+
+        $substitutions = Dictionary::forLanguage('english')->getSubstitutions();
+
+        $this->assertContains('v', $substitutions['/u/']);
+        $this->assertContains('†', $substitutions['/t/']);
+        $this->assertContains('7', $substitutions['/t/']);
+        $this->assertContains('+', $substitutions['/t/']);
+        $this->assertTrue(Blasp::check('fvck')->isOffensive());
+        $this->assertTrue(Blasp::check('sh17')->isOffensive());
+    }
+
     // --- flexible phrases ---------------------------------------------------
 
     public function test_phrases_match_literally_by_default(): void
