@@ -67,8 +67,13 @@ class HomoglyphNormalizer implements StringNormalizer
         // Precomposed accented Latin letters → base letter, only when the
         // decomposition starts with a single ASCII letter. Ligatures such as
         // "ﬁ" or "æ" decompose to two letters and are left alone.
-        // \Normalizer comes from ext-intl or, failing that, the
-        // symfony/polyfill-intl-normalizer package this package requires.
+        // \Normalizer comes from ext-intl or the suggested
+        // symfony/polyfill-intl-normalizer package. Without either, accented
+        // letters are left as they are; the other folding still applies.
+        if (!class_exists(\Normalizer::class)) {
+            return $string;
+        }
+
         return preg_replace_callback(
             '/[^\x00-\x7F]/u',
             static function (array $m): string {

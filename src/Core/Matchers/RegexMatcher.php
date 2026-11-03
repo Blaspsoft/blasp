@@ -191,7 +191,7 @@ class RegexMatcher
                 // A letter unit already ends in a separator slot, which covers the space;
                 // after anything else the slot is added here
                 $previous = end($sequence);
-                if ($previous === false || isset($previous['literal'])) {
+                if ($previous === false || ($previous['literal'] ?? false)) {
                     $sequence[] = ['pattern' => $this->generateSeparatorExpression($separators), 'chars' => [], 'literal' => true];
                 }
                 $i++;

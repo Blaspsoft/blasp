@@ -454,7 +454,7 @@ return [
 
 | Option | Catches | Trade-off |
 |--------|---------|-----------|
-| `homoglyphs` | `fuсk` (Cyrillic с), `ｆｕｃｋ`, `dāmn` | Folding runs after the language normalizer, so German `ä → ae` still applies. Requires `ext-intl` or the bundled `symfony/polyfill-intl-normalizer` for accented letters. |
+| `homoglyphs` | `fuсk` (Cyrillic с), `ｆｕｃｋ`, `dāmn` | Cyrillic and Greek text is folded too, so apps with Russian or Greek users may see new matches in those scripts. Folding runs after the language normalizer, so German `ä → ae` still applies. Accented letters (`dāmn`) are only folded when `ext-intl` or `symfony/polyfill-intl-normalizer` is installed. |
 | `extended_substitutions` | `s1ut`, `sh17`, `j122` | Digits next to letters (version numbers, codes) can now complete a word. |
 | `flexible_phrases` | `sieg-heil`, `siegheil` for the entry `sieg heil` | Multi-word entries also match when run together. |
 

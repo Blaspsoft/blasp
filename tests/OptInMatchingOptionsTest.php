@@ -2,6 +2,7 @@
 
 namespace Blaspsoft\Blasp\Tests;
 
+use Blaspsoft\Blasp\Core\Dictionary;
 use Blaspsoft\Blasp\Core\Normalizers\EnglishNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\GermanNormalizer;
 use Blaspsoft\Blasp\Core\Normalizers\HomoglyphNormalizer;
@@ -39,6 +40,10 @@ class OptInMatchingOptionsTest extends TestCase
 
     public function test_accented_letters_missing_from_the_substitution_table_are_matched_when_enabled(): void
     {
+        if (!class_exists(\Normalizer::class)) {
+            $this->markTestSkipped('Accent folding needs ext-intl or symfony/polyfill-intl-normalizer');
+        }
+
         $this->assertNotContains('ā', config('blasp.substitutions')['/a/']);
 
         Config::set('blasp.homoglyphs', true);
@@ -81,7 +86,9 @@ class OptInMatchingOptionsTest extends TestCase
 
         $this->assertSame('मादरचोद', HomoglyphNormalizer::fold('मादरचोद'));
         $this->assertSame('ﬁne', HomoglyphNormalizer::fold('ﬁne'));
-        $this->assertSame('ganja', HomoglyphNormalizer::fold('gānjā'));
+        if (class_exists(\Normalizer::class)) {
+            $this->assertSame('ganja', HomoglyphNormalizer::fold('gānjā'));
+        }
     }
 
     // --- extended substitutions ---------------------------------------------
@@ -130,6 +137,41 @@ class OptInMatchingOptionsTest extends TestCase
 
         $this->assertTrue(Blasp::check('blow-job')->isOffensive());
         $this->assertTrue(Blasp::check('blowjob')->isOffensive());
+    }
+
+    public function test_a_space_after_a_letter_does_not_add_a_second_separator_slot(): void
+    {
+        Config::set('blasp.flexible_phrases', true);
+
+        // The letter before the space already ends in a separator slot, so the space adds
+        // none: the phrase compiles to as many slots as the joined word. Devanagari letters
+        // have no substitution entry, which is the case that went wrong.
+        foreach ([['sieg heil', 'siegheil'], ['गांड मरा', 'गांडमरा']] as [$phrase, $joined]) {
+            $expressions = Dictionary::forLanguage('english', ['block' => [$phrase, $joined]])->getProfanityExpressions();
+
+            $this->assertSame(
+                substr_count($expressions[$joined], '{0,3}?'),
+                substr_count($expressions[$phrase], '{0,3}?'),
+                $phrase
+            );
+        }
+
+        $this->assertTrue(Blasp::block('sieg heil')->check('sieg-heil')->isOffensive());
+    }
+
+    public function test_flexible_phrases_check_long_runs_quickly(): void
+    {
+        Config::set('blasp.flexible_phrases', true);
+
+        $check = Blasp::block('sieg heil');
+        $check->check('warm up');
+
+        $start = microtime(true);
+        $check->check(str_repeat('s', 2000));
+        $check->check(str_repeat('s ', 2000));
+        $elapsed = microtime(true) - $start;
+
+        $this->assertLessThan(3.0, $elapsed, sprintf('Check took %.2fs', $elapsed));
     }
 
     // --- cache --------------------------------------------------------------
