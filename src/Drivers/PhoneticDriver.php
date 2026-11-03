@@ -11,6 +11,7 @@ use Blaspsoft\Blasp\Core\Score;
 use Blaspsoft\Blasp\Core\Matchers\FalsePositiveFilter;
 use Blaspsoft\Blasp\Core\Matchers\PhoneticMatcher;
 use Blaspsoft\Blasp\Enums\Severity;
+use Blaspsoft\Blasp\Core\Normalizers\OffsetMap;
 
 class PhoneticDriver implements DriverInterface
 {
@@ -61,6 +62,7 @@ class PhoneticDriver implements DriverInterface
 
         $normalizer = $dictionary->getNormalizer();
         $normalized = $normalizer->normalize($text);
+        $offsetMap = OffsetMap::build($text, fn (string $s) => $normalizer->normalize($s));
 
         // Tokenize
         preg_match_all('/\b[\w\']+\b/u', $normalized, $matches, PREG_OFFSET_CAPTURE);
@@ -90,14 +92,15 @@ class PhoneticDriver implements DriverInterface
                 continue;
             }
 
-            $originalWord = mb_substr($text, $start, $length);
+            [$originalStart, $originalLength] = $offsetMap->toOriginal($start, $length);
+            $originalWord = mb_substr($text, $originalStart, $originalLength);
 
             $matchedWords[] = new MatchedWord(
                 text: $originalWord,
                 base: $baseWord,
                 severity: $dictionary->getSeverity($baseWord),
-                position: $start,
-                length: $length,
+                position: $originalStart,
+                length: $originalLength,
                 language: $dictionary->getLanguage(),
             );
         }

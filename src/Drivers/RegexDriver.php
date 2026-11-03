@@ -10,6 +10,7 @@ use Blaspsoft\Blasp\Core\Result;
 use Blaspsoft\Blasp\Core\Score;
 use Blaspsoft\Blasp\Core\Matchers\FalsePositiveFilter;
 use Blaspsoft\Blasp\Core\Matchers\CompoundWordDetector;
+use Blaspsoft\Blasp\Core\Normalizers\OffsetMap;
 use Blaspsoft\Blasp\Enums\Severity;
 
 class RegexDriver implements DriverInterface
@@ -46,6 +47,9 @@ class RegexDriver implements DriverInterface
 
         // Immutable copy for position lookups — never mutated
         $immutableNormalized = $originalNormalized;
+
+        // Normalizing can change the length of the text, so match positions are mapped back
+        $offsetMap = OffsetMap::build($text, fn (string $s) => preg_replace('/\s+/', ' ', $normalizer->normalize($s)));
 
         $matchedWords = [];
         $uniqueMap = [];
@@ -122,14 +126,15 @@ class RegexDriver implements DriverInterface
                         $profanitiesCount++;
 
                         // Get the original text at this position from the original input
-                        $originalMatchText = mb_substr($text, $start, $length);
+                        [$originalStart, $originalLength] = $offsetMap->toOriginal($start, $length);
+                        $originalMatchText = mb_substr($text, $originalStart, $originalLength);
 
                         $matchedWords[] = new MatchedWord(
                             text: $originalMatchText,
                             base: $profanity,
                             severity: $dictionary->getSeverity($profanity),
-                            position: $start,
-                            length: $length,
+                            position: $originalStart,
+                            length: $originalLength,
                             language: $dictionary->getLanguage(),
                         );
 
