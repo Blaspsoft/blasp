@@ -206,6 +206,11 @@ class Dictionary
         return $this->falsePositives;
     }
 
+    public function getAllowList(): array
+    {
+        return $this->allowList;
+    }
+
     public function getBlockList(): array
     {
         return $this->blockList;

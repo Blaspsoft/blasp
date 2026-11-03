@@ -52,6 +52,7 @@ class PhoneticDriver implements DriverInterface
         }
 
         $filter = new FalsePositiveFilter($dictionary->getFalsePositives());
+        $allowed = array_flip($dictionary->getAllowList());
 
         $matcher = new PhoneticMatcher(
             profanities: $dictionary->getProfanities(),
@@ -80,6 +81,12 @@ class PhoneticDriver implements DriverInterface
 
             // Skip dictionary false positives
             if ($filter->isFalsePositive($word)) {
+                continue;
+            }
+
+            // An allowed word stays allowed even if it sounds like another list word
+            // (allow('fuck') used to still flag "fuck" as "fucka")
+            if (isset($allowed[mb_strtolower($word, 'UTF-8')])) {
                 continue;
             }
 
