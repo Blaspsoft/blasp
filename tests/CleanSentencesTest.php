@@ -30,6 +30,13 @@ class CleanSentencesTest extends TestCase
             ['french', 'C\'est simple: les ordures vont dans la poubelle.'],
             ['german', 'Ich gehe zu meiner Mutter.'],
             ['german', 'Die Straße ist breit und die Stadt ist schön.'],
+            ['german', 'Das Foto ist schwarz, matt und ziemlich dunkel.'],
+            ['german', 'Bitte geben Sie Ihr Geschlecht an und folgen Sie dem Schild zum Ausgang.'],
+            ['german', 'Zum Backen brauche ich Eier, Speck und einen Sack Mehl.'],
+            ['german', 'Ich war krank und müde, der Drucker ist kaputt und die Datei ist weg.'],
+            ['german', 'Das Glas ist voll, der Reifen ist platt und das Wetter ist schlecht.'],
+            ['german', 'Der Staubsauger saugt gut, das Becken ist warm und der erste Schritt war falsch.'],
+            ['german', 'Sie war arbeitslos, ihr Bruder ist schwul und beide besteigen gern einen Berg.'],
             ['spanish', 'El perro come en el jardín.'],
             ['spanish', 'Mi familia vive en Madrid.'],
             ['english', 'The hijacking was reported on the evening news.'],
@@ -64,7 +71,8 @@ class CleanSentencesTest extends TestCase
         return [
             ['french', 'putain de merde'], ['french', 'va te faire foutre, connard'], ['french', 'fils de pute'],
             ['french', 'espèce de salope'], ['french', 'quel con'], ['french', 'petite bite'],
-            ['german', 'du Arschloch'], ['spanish', 'hijo de puta'],
+            ['german', 'du Arschloch'], ['german', 'verfickte Scheiße'], ['german', 'du blöder Wichser'],
+            ['german', 'so ein Hurensohn'], ['spanish', 'hijo de puta'],
             ['hindi', 'tu kutte ki aulad hai'], ['hindi', 'ullu ka pattha'], ['hindi', 'तू चूतिया है'],
             ['nepali', 'kukur ko choro'], ['nepali', 'त कुकुरको छोरो'],
         ];
